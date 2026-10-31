@@ -30,14 +30,14 @@ def create_subscription():
 def list_subscriptions():
     query = SubscriptionListQuerySchema().load(request.args.to_dict())
     items, total = subscription_service.list_subscriptions(
-        get_current_user(), query.get("status"), query["page"], query["per_page"]
+        get_current_user(), query.get("status"), query["page"], query["page_size"]
     )
     return jsonify(
         {
             "items": SubscriptionSchema(many=True).dump(items),
             "total": total,
             "page": query["page"],
-            "per_page": query["per_page"],
+            "page_size": query["page_size"],
         }
     )
 

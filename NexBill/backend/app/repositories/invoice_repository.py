@@ -91,6 +91,19 @@ def list_payments(invoice_id: int) -> list[Payment]:
     )
 
 
+def list_all_payments(page: int, page_size: int) -> tuple[list[Payment], int]:
+    """Newest first, with each payment's invoice loaded for display."""
+    result = db.paginate(
+        db.select(Payment)
+        .options(selectinload(Payment.invoice))
+        .order_by(Payment.payment_date.desc(), Payment.id.desc()),
+        page=page,
+        per_page=page_size,
+        error_out=False,
+    )
+    return result.items, result.total
+
+
 def _overdue_condition(today: date):
     return db.and_(Invoice.status == InvoiceStatus.CONFIRMED, Invoice.due_date < today)
 

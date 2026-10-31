@@ -45,25 +45,31 @@ def list_customer_subscriptions(user_id: Any, *, page: int = 1, page_size: int =
     count_sql = text("SELECT COUNT(*) FROM subscriptions WHERE customer_id = :customer_id")
     total = db.session.execute(count_sql, {"customer_id": customer_id}).scalar_one()
 
+    # A very large page number would overflow OFFSET, and no rows exist that far along.
+    offset = (page - 1) * page_size
+    if offset >= total:
+        return {"items": [], "page": page, "page_size": page_size, "total": total}
+
     rows = db.session.execute(
         text(
             """
             SELECT s.id,
-                   s.number,
+                   s.subscription_number,
                    s.status,
                    s.start_date,
-                   s.expiry_date,
+                   s.expires_on,
                    s.next_billing_date,
                    p.billing_period,
-                   p.price
+                   p.price,
+                   p.name
             FROM subscriptions AS s
             LEFT JOIN plans AS p ON p.id = s.plan_id
             WHERE s.customer_id = :customer_id
-            ORDER BY s.start_date DESC, s.id DESC
+            ORDER BY s.start_date DESC NULLS LAST, s.id DESC
             LIMIT :limit OFFSET :offset
             """
         ),
-        {"customer_id": customer_id, "limit": page_size, "offset": (page - 1) * page_size},
+        {"customer_id": customer_id, "limit": page_size, "offset": offset},
     ).all()
 
     items = [
@@ -72,10 +78,11 @@ def list_customer_subscriptions(user_id: Any, *, page: int = 1, page_size: int =
             "number": row[1],
             "status": row[2],
             "start_date": _format_date(row[3]),
-            "expiry_date": _format_date(row[4]),
+            "expires_on": _format_date(row[4]),
             "next_billing_date": _format_date(row[5]),
             "billing_period": row[6],
             "price": _money_string(row[7]),
+            "plan_name": row[8],
         }
         for row in rows
     ]
@@ -87,27 +94,35 @@ def list_customer_invoices(user_id: Any, *, page: int = 1, page_size: int = 25) 
     if customer_id is None:
         return {"items": [], "page": page, "page_size": page_size, "total": 0}
 
-    count_sql = text("SELECT COUNT(*) FROM invoices WHERE customer_id = :customer_id")
+    # Drafts are hidden from customers, the same as on GET /api/invoices.
+    count_sql = text(
+        "SELECT COUNT(*) FROM invoices WHERE customer_id = :customer_id AND status <> 'draft'"
+    )
     total = db.session.execute(count_sql, {"customer_id": customer_id}).scalar_one()
+
+    # A very large page number would overflow OFFSET, and no rows exist that far along.
+    offset = (page - 1) * page_size
+    if offset >= total:
+        return {"items": [], "page": page, "page_size": page_size, "total": total}
 
     rows = db.session.execute(
         text(
             """
             SELECT i.id,
-                   i.number,
+                   i.invoice_number,
                    i.status,
                    i.due_date,
                    i.total,
                    COALESCE(SUM(p.amount), 0) AS amount_paid
             FROM invoices AS i
             LEFT JOIN payments AS p ON p.invoice_id = i.id
-            WHERE i.customer_id = :customer_id
-            GROUP BY i.id, i.number, i.status, i.due_date, i.total
-            ORDER BY i.issue_date DESC, i.id DESC
+            WHERE i.customer_id = :customer_id AND i.status <> 'draft'
+            GROUP BY i.id, i.invoice_number, i.status, i.due_date, i.total, i.invoice_date
+            ORDER BY i.invoice_date DESC, i.id DESC
             LIMIT :limit OFFSET :offset
             """
         ),
-        {"customer_id": customer_id, "limit": page_size, "offset": (page - 1) * page_size},
+        {"customer_id": customer_id, "limit": page_size, "offset": offset},
     ).all()
 
     items = [
@@ -128,7 +143,7 @@ def list_customer_invoices(user_id: Any, *, page: int = 1, page_size: int = 25) 
 def _money_string(value: Any) -> str:
     if value is None:
         return "0.00"
-    return f"{float(value):.2f}"
+    return f"{value:.2f}"
 
 
 def _format_date(value: Any) -> str | None:

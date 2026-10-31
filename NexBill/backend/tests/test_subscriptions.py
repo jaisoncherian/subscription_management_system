@@ -497,7 +497,7 @@ def test_list_filters_by_status_and_paginates(world):
     assert [i["id"] for i in admin.get(URL, query_string={"status": "active"}).get_json()["items"]] == [active_id]
     assert admin.get(URL, query_string={"status": "draft"}).get_json()["total"] == 1
     assert_error(admin.get(URL, query_string={"status": "bogus"}), 422, "validation_error")
-    page = admin.get(URL, query_string={"per_page": 1}).get_json()
+    page = admin.get(URL, query_string={"page_size": 1}).get_json()
     assert len(page["items"]) == 1
     assert page["total"] == 2
 

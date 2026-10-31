@@ -27,14 +27,14 @@ def list_invoices():
         query.get("status"),
         query["overdue"],
         query["page"],
-        query["per_page"],
+        query["page_size"],
     )
     return jsonify(
         {
             "items": InvoiceSchema(many=True).dump(items),
             "total": total,
             "page": query["page"],
-            "per_page": query["per_page"],
+            "page_size": query["page_size"],
         }
     )
 

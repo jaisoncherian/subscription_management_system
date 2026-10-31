@@ -4,12 +4,14 @@ from flask import Flask, current_app
 from flask.cli import with_appcontext
 
 from app.core.errors import AppError
+from app.jobs import seed_data
 from app.services import billing_service, user_service
 
 
 def register_commands(app: Flask) -> None:
     app.cli.add_command(create_admin)
     app.cli.add_command(run_billing)
+    app.cli.add_command(seed_demo)
 
 
 @click.command("run-billing")
@@ -48,3 +50,29 @@ def create_admin():
         click.echo(f"Admin created: {user.email}")
     else:
         click.echo(f"Admin already exists: {user.email}. Password not changed.")
+
+
+@click.command("seed-demo")
+@with_appcontext
+def seed_demo():
+    """Fill an empty database with demo data. Does nothing if it has already run."""
+    config = current_app.config
+    if config["IS_PRODUCTION"]:
+        raise click.ClickException("seed-demo refuses to run in production.")
+    missing = [
+        name for name in ("ADMIN_EMAIL", "ADMIN_PASSWORD", "DEMO_PASSWORD") if not config[name]
+    ]
+    if missing:
+        raise click.ClickException(f"Set {', '.join(missing)} in .env.")
+
+    summary = seed_data.seed_demo(config["ADMIN_EMAIL"], config["ADMIN_PASSWORD"], config["DEMO_PASSWORD"])
+    if summary is None:
+        click.echo("Demo data is already there. Nothing changed.")
+        return
+    click.echo(
+        f"Created {summary['subscriptions']} subscriptions, {summary['invoices']} invoices "
+        f"and {summary['payments']} payments."
+    )
+    click.echo(f"Staff login: {summary['staff_email']}")
+    click.echo(f"Customer login: {summary['customer_email']}")
+    click.echo("Their password is DEMO_PASSWORD in .env.")

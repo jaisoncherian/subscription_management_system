@@ -53,6 +53,10 @@ def create_staff(
     return user
 
 
+def list_staff(page: int, page_size: int) -> tuple[list[User], int]:
+    return user_repository.list_by_role(UserRole.STAFF, page, page_size)
+
+
 def ensure_admin(email: str, password: str) -> tuple[User, bool]:
     """Create the admin once. Returns the user and whether it was just created.
 

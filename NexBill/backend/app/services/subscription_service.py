@@ -7,6 +7,7 @@ from app.core import clock
 from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.models import Subscription, SubscriptionLine, User
 from app.models.enums import SubscriptionStatus as Status
+from app.models.enums import UserRole
 from app.repositories import (
     audit_repository,
     catalog_repository,
@@ -106,6 +107,30 @@ TRANSITIONS = {
 }
 
 
+def _with_allowed_actions(viewer: User, subscription: Subscription) -> Subscription:
+    """Tell the client which buttons to show, so it never repeats these rules."""
+    subscription.allowed_actions = (
+        []
+        if viewer.role == UserRole.CUSTOMER
+        else [action for action in TRANSITIONS if _is_allowed(subscription, action)]
+    )
+    return subscription
+
+
+def _is_allowed(subscription: Subscription, action: str) -> bool:
+    transition = TRANSITIONS[action]
+    if subscription.status not in transition.sources:
+        return False
+    if transition.plan_flag and not getattr(subscription.plan, transition.plan_flag):
+        return False
+    if action == "renew":
+        return subscription.expires_on is not None
+    if action == "confirm":
+        valid_until = subscription.quotation_valid_until
+        return not valid_until or valid_until >= clock.today()
+    return True
+
+
 def create_from_template(
     actor: User,
     customer_id: int,
@@ -167,7 +192,7 @@ def create_from_template(
         {"template_id": template.id, "customer_id": customer.id},
     )
     transaction.commit()
-    return subscription
+    return _with_allowed_actions(actor, subscription)
 
 
 def apply_action(actor: User, subscription_id: int, action: str) -> Subscription:
@@ -199,7 +224,7 @@ def apply_action(actor: User, subscription_id: int, action: str) -> Subscription
         {"from": previous_status, "to": transition.target},
     )
     transaction.commit()
-    return subscription
+    return _with_allowed_actions(actor, subscription)
 
 
 def get_subscription(viewer: User, subscription_id: int) -> Subscription:
@@ -209,7 +234,7 @@ def get_subscription(viewer: User, subscription_id: int) -> Subscription:
     )
     if subscription is None:
         raise NotFound("Subscription not found.")
-    return subscription
+    return _with_allowed_actions(viewer, subscription)
 
 
 def list_subscriptions(

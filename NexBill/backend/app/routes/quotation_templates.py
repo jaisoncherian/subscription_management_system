@@ -34,7 +34,7 @@ def list_templates():
             "items": TemplateSchema(many=True).dump(items),
             "total": total,
             "page": query["page"],
-            "per_page": query["per_page"],
+            "page_size": query["page_size"],
         }
     )
 

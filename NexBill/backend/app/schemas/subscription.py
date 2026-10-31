@@ -23,19 +23,28 @@ class SubscriptionLineSchema(Schema):
     product_id = fields.Integer()
     product_name = fields.String(attribute="product.name")
     variant_id = fields.Integer()
+    variant_label = fields.Function(
+        lambda line: f"{line.variant.attribute}: {line.variant.value}" if line.variant else None
+    )
     tax_id = fields.Integer()
+    tax_name = fields.String(attribute="tax.name")
     quantity = fields.Integer()
     unit_price = fields.Decimal(as_string=True, places=2)
+    amount = fields.Function(lambda line: f"{line.quantity * line.unit_price:.2f}")
 
 
 class SubscriptionSchema(Schema):
     id = fields.Integer()
     subscription_number = fields.String()
     status = fields.String()
+    # Only set on a single subscription, not in lists. See subscription_service.
+    allowed_actions = fields.List(fields.String())
     customer_id = fields.Integer()
     customer_name = fields.String(attribute="customer.name")
+    customer_email = fields.String(attribute="customer.email")
     plan_id = fields.Integer()
     plan_name = fields.String(attribute="plan.name")
+    billing_period = fields.String(attribute="plan.billing_period")
     template_id = fields.Integer()
     discount_id = fields.Integer()
     quotation_valid_until = fields.Date()

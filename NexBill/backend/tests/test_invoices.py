@@ -350,7 +350,7 @@ def test_list_filters_and_paginates(world):
         URL, query_string={"customer_id": world["other_customer_id"]}
     ).get_json()
     assert by_customer["total"] == 1
-    page = admin.get(URL, query_string={"per_page": 2, "page": 2}).get_json()
+    page = admin.get(URL, query_string={"page_size": 2, "page": 2}).get_json()
     assert len(page["items"]) == 1
     assert page["total"] == 3
     assert_error(admin.get(URL, query_string={"status": "bogus"}), 422, "validation_error")

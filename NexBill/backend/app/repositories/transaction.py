@@ -10,6 +10,10 @@ def rollback() -> None:
     db.session.rollback()
 
 
+def ping() -> None:
+    db.session.execute(db.text("SELECT 1"))
+
+
 def savepoint():
     """A context manager. An exception inside undoes only the work inside it."""
     return db.session.begin_nested()

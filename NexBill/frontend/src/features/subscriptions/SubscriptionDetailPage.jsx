@@ -48,13 +48,13 @@ export default function SubscriptionDetailPage() {
     )
   }
 
-  const actions = SUB_ACTIONS[sub.status] ?? []
+  const actions = (sub.allowed_actions ?? []).map((a) => SUB_ACTIONS[a]).filter(Boolean)
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={<span className="flex items-center gap-3">{sub.number} <StatusBadge status={sub.status} /></span>}
-        subtitle={`${sub.customer?.full_name} · ${sub.plan?.name}`}
+        title={<span className="flex items-center gap-3">{sub.subscription_number} <StatusBadge status={sub.status} /></span>}
+        subtitle={`${sub.customer_name} · ${sub.plan_name}`}
         actions={
           <>
             <Link to="/subscriptions"><Button variant="ghost">← Back</Button></Link>
@@ -71,8 +71,8 @@ export default function SubscriptionDetailPage() {
 
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <Info label="Customer">{sub.customer?.full_name}<div className="text-xs text-slate-500">{sub.customer?.email}</div></Info>
-          <Info label="Plan">{sub.plan?.name}<div className="text-xs capitalize text-slate-500">{sub.plan?.billing_period}</div></Info>
+          <Info label="Customer">{sub.customer_name}<div className="text-xs text-slate-500">{sub.customer_email}</div></Info>
+          <Info label="Plan">{sub.plan_name}<div className="text-xs capitalize text-slate-500">{sub.billing_period}</div></Info>
           <Info label="Start date">{sub.start_date && formatDate(sub.start_date)}</Info>
           <Info label="Expires on">{sub.expires_on && formatDate(sub.expires_on)}</Info>
           <Info label="Next billing">{sub.next_billing_date && formatDate(sub.next_billing_date)}</Info>
@@ -89,7 +89,7 @@ export default function SubscriptionDetailPage() {
             { key: 'product', header: 'Product', render: (l) => <>{l.product_name}{l.variant_label && <div className="text-xs text-slate-500">{l.variant_label}</div>}</> },
             { key: 'quantity', header: 'Qty' },
             { key: 'unit_price', header: 'Unit price', render: (l) => formatMoney(l.unit_price) },
-            { key: 'tax', header: 'Tax' },
+            { key: 'tax_name', header: 'Tax' },
             { key: 'amount', header: 'Amount', className: 'text-right', render: (l) => formatMoney(l.amount) },
           ]}
         />

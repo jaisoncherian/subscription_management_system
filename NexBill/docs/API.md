@@ -6,7 +6,8 @@ Base path: `/api`
 
 | Method | Path          | Auth | Description  | Success response     |
 | ------ | ------------- | ---- | ------------ | -------------------- |
-| GET    | `/api/health` | None | Health check | `200 {"status":"ok"}` |
+| GET    | `/api/health` | None | The app is running | `200 {"status":"ok"}` |
+| GET    | `/api/health/ready` | None | The app can also reach the database | `200 {"status":"ok"}`, or `503` |
 | POST   | `/api/auth/register` | None | Public signup. Always creates a customer | `201` user |
 | POST   | `/api/auth/login` | None | Log in and set the session cookies | `200` user |
 | POST   | `/api/auth/logout` | None | Clear the session cookies | `200 {"message"}` |
@@ -14,17 +15,18 @@ Base path: `/api`
 | POST   | `/api/auth/forgot-password` | None | Email a reset link. Same reply for any email | `200 {"message"}` |
 | POST   | `/api/auth/reset-password` | None | Set a new password with a reset token | `200 {"message"}` |
 | POST   | `/api/staff` | Admin | Create a staff account | `201` user |
+| GET    | `/api/staff` | Admin | List staff accounts. `?page`, `?page_size` | `200` page |
 | POST   | `/api/quotation-templates` | Admin | Create a template | `201` template |
-| GET    | `/api/quotation-templates` | Admin, staff | List templates. `?page`, `?per_page`, `?include_inactive=true` | `200` page |
+| GET    | `/api/quotation-templates` | Admin, staff | List templates. `?page`, `?page_size`, `?include_inactive=true` | `200` page |
 | GET    | `/api/quotation-templates/{id}` | Admin, staff | One template | `200` template |
 | PUT    | `/api/quotation-templates/{id}` | Admin | Replace a template. Existing subscriptions do not change | `200` template |
 | DELETE | `/api/quotation-templates/{id}` | Admin | Deactivate a template. It is kept, not deleted | `200` template |
 | POST   | `/api/subscriptions` | Admin, staff | Create a draft subscription from a template | `201` subscription |
-| GET    | `/api/subscriptions` | Any logged-in user | List subscriptions. Customers get only their own. `?status`, `?page`, `?per_page` | `200` page |
+| GET    | `/api/subscriptions` | Any logged-in user | List subscriptions. Customers get only their own. `?status`, `?page`, `?page_size` | `200` page |
 | GET    | `/api/subscriptions/{id}` | Any logged-in user | One subscription. Another customer's returns `404` | `200` subscription |
 | POST   | `/api/subscriptions/{id}/{action}` | Admin, staff | Change state. No request body | `200` subscription |
 | POST   | `/api/billing/run` | Admin | Invoice everything that is due. Same as `flask run-billing` | `200` summary |
-| GET    | `/api/invoices` | Any logged-in user | List invoices. Customers get only their own, without drafts. `?status`, `?overdue=true`, `?customer_id`, `?page`, `?per_page` | `200` page |
+| GET    | `/api/invoices` | Any logged-in user | List invoices. Customers get only their own, without drafts. `?status`, `?overdue=true`, `?customer_id`, `?page`, `?page_size` | `200` page |
 | GET    | `/api/invoices/{id}` | Any logged-in user | One invoice. Another customer's returns `404` | `200` invoice |
 | GET    | `/api/invoices/{id}/print` | Any logged-in user | Printable HTML page. Use the browser to print or save as PDF | `200` HTML |
 | POST   | `/api/invoices/{id}/confirm` | Admin, staff | Draft to confirmed. No request body | `200` invoice |
@@ -32,10 +34,103 @@ Base path: `/api`
 | POST   | `/api/invoices/{id}/send` | Admin, staff | Email a confirmed or paid invoice. No request body | `200` invoice |
 | GET    | `/api/invoices/{id}/payments` | Any logged-in user | Payments on an invoice | `200` list |
 | POST   | `/api/invoices/{id}/payments` | Admin, staff | Record a payment | `201` payment |
+| GET    | `/api/payments` | Admin, staff | Every payment, newest first, with `invoice_number` and `customer_name`. `?page`, `?page_size` | `200` page |
+| GET    | `/api/customers` | Admin, staff | Pick a customer. `?page`, `?page_size`. Each item is `id`, `name`, `email` | `200` page |
+| POST   | `/api/taxes` | Admin | Create a tax | `201` tax |
+| GET    | `/api/taxes` | Admin, staff | List taxes. `?page`, `?page_size` | `200` page |
+| DELETE | `/api/taxes/{id}` | Admin | Deactivate a tax. It is kept, not deleted | `200` tax |
+| POST   | `/api/products` | Admin | Create a product with its variants | `201` product |
+| GET    | `/api/products` | Admin, staff | List products. `?page`, `?page_size` | `200` page |
+| DELETE | `/api/products/{id}` | Admin | Deactivate a product. It is kept, not deleted | `200` product |
+| POST   | `/api/plans` | Admin | Create a plan | `201` plan |
+| GET    | `/api/plans` | Admin, staff | List plans. `?page`, `?page_size` | `200` page |
+| DELETE | `/api/plans/{id}` | Admin | Deactivate a plan. It is kept, not deleted | `200` plan |
+| POST   | `/api/discounts` | Admin | Create a discount | `201` discount |
+| GET    | `/api/discounts` | Admin, staff | List discounts. `?page`, `?page_size` | `200` page |
+| DELETE | `/api/discounts/{id}` | Admin | Deactivate a discount. It is kept, not deleted | `200` discount |
+| GET    | `/api/reports/summary` | Admin, staff | Totals. `?date_from`, `?date_to` | `200` summary |
+| GET    | `/api/reports/revenue` | Admin, staff | Invoiced and collected per month. `?group=month` is required. `?date_from`, `?date_to` | `200` list |
+| GET    | `/api/reports/overdue` | Admin, staff | Overdue invoices. `?date_from`, `?date_to`, `?page`, `?page_size` | `200` page |
+| GET    | `/api/portal/subscriptions` | Customer | The customer's own subscriptions. `?page`, `?page_size` | `200` page |
+| GET    | `/api/portal/invoices` | Customer | The customer's own invoices, without drafts. `?page`, `?page_size` | `200` page |
 
-More endpoints will be listed here as features are built.
+A page looks like `{"items": [...], "total": 42, "page": 1, "page_size": 20}`. `page_size` is at most 100. Money values are strings, such as `"1560.00"`, so that no precision is lost. Dates are `YYYY-MM-DD`, and statuses are lower case.
 
-A page looks like `{"items": [...], "total": 42, "page": 1, "per_page": 20}`. `per_page` is at most 100. Money values are strings, such as `"1560.00"`, so that no precision is lost.
+## Catalog
+
+```json
+{ "name": "GST 18%", "rate": "18.00" }
+```
+
+```json
+{
+  "name": "Hosting",
+  "sales_price": "1000.00",
+  "cost_price": "0.00",
+  "product_type": "service",
+  "description": "Optional",
+  "variants": [{ "attribute": "Brand", "value": "Odoo", "extra_price": "560.00" }]
+}
+```
+
+```json
+{
+  "name": "Monthly",
+  "price": "0.00",
+  "billing_period": "monthly",
+  "billing_interval": 1,
+  "min_quantity": 1,
+  "valid_from": "2026-01-01",
+  "valid_to": null,
+  "is_auto_close": false,
+  "is_closable": true,
+  "is_pausable": false,
+  "is_renewable": false
+}
+```
+
+```json
+{
+  "code": "SAVE10",
+  "name": "Save 10",
+  "discount_type": "percent",
+  "scope": "subscription",
+  "value": "10.00",
+  "min_purchase": "0.00",
+  "min_quantity": 1,
+  "valid_from": null,
+  "valid_to": null,
+  "usage_limit": 5,
+  "product_ids": []
+}
+```
+
+`billing_period` is `daily`, `weekly`, `monthly` or `yearly`. `discount_type` is `percent` or `fixed`. `scope` is `subscription` or `product`, and a `product` discount needs `product_ids`. An empty `usage_limit` means unlimited. A name or code already in use returns `409 name_taken`. Items can be created, listed and deactivated, but not edited. To change one, deactivate it and create a replacement. Existing subscriptions keep the prices they were created with.
+
+## Reports
+
+`GET /api/reports/summary`:
+
+```json
+{ "active_subscriptions": 4, "mrr": "1624.58", "revenue_collected": "690.00", "outstanding": "420.00", "overdue_count": 3 }
+```
+
+`GET /api/reports/revenue` returns a list: `[{ "period": "2025-01-01", "invoiced": "500.00", "collected": "400.00" }]`. `period` is the first day of the month. `invoiced` counts confirmed and paid invoices only, so drafts and cancelled invoices are left out.
+
+Each `GET /api/reports/overdue` item is `invoice_id`, `number`, `customer` (the name), `due_date`, `balance` and `days_overdue`.
+
+## Customer portal
+
+Each `GET /api/portal/subscriptions` item is `subscription_id`, `number`, `status`, `plan_name`, `billing_period`, `price`, `start_date`, `expires_on` and `next_billing_date`.
+
+Each `GET /api/portal/invoices` item is `invoice_id`, `number`, `status`, `total`, `amount_paid`, `balance` and `due_date`.
+
+## Allowed actions
+
+A single subscription or invoice includes `allowed_actions`, the actions this user can take now. Show buttons only for these. Lists leave it out, and customers always get an empty list.
+
+- **Subscriptions:** the state machine action names below, such as `send-quotation`.
+- **Invoices:** `confirm`, `cancel`, `send`, and `pay` for recording a payment.
 
 ## Quotation templates
 
@@ -175,6 +270,7 @@ Every error response uses this shape:
 | 403    | `forbidden`                                                                | Authenticated, but not allowed           |
 | 404    | `not_found`                                                                | The resource or route does not exist     |
 | 405    | `method_not_allowed`                                                       | The route does not support the method    |
+| 413    | `request_entity_too_large`                                                 | The request body is over 1 MB            |
 | 409    | `conflict`, `email_taken`, `name_taken`, `invalid_transition`, `action_not_allowed_by_plan`, `quotation_expired`, `subscription_expired`, `no_expiry_date`, `plan_unavailable`, `catalog_item_inactive`, `below_plan_minimum`, `invoice_has_payments`, `invoice_not_sendable`, `invoice_not_payable`, `overpayment` | Conflicts with the current state |
 | 422    | `validation_error`                                                         | The submitted data failed validation     |
 | 429    | `too_many_requests`                                                        | Rate limit exceeded                      |
