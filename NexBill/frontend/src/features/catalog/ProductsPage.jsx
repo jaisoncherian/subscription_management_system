@@ -1,6 +1,7 @@
 import { useFieldArray } from 'react-hook-form'
 import Button from '../../components/Button'
 import { FormField, Input } from '../../components/FormField'
+import Icon from '../../components/Icon'
 import ResourcePage from '../../components/ResourcePage'
 import { productsApi } from '../../api/catalog'
 import { formatMoney } from '../../utils/format'
@@ -10,7 +11,7 @@ function VariantFields({ control, register, formState: { errors } }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-700">Variants</span>
+        <span className="text-[13px] font-medium text-slate-700">Variants</span>
         <Button variant="ghost" onClick={() => append({ attribute: '', value: '', extra_price: '' })}>+ Add variant</Button>
       </div>
       {typeof errors.variants?.message === 'string' && <p className="text-xs text-rose-600" role="alert">{errors.variants.message}</p>}
@@ -25,7 +26,7 @@ function VariantFields({ control, register, formState: { errors } }) {
           <FormField error={errors.variants?.[index]?.extra_price?.message}>
             <Input aria-label="Extra price" inputMode="decimal" placeholder="560.00" {...register(`variants.${index}.extra_price`)} />
           </FormField>
-          <Button variant="ghost" aria-label="Remove variant" onClick={() => remove(index)}>✕</Button>
+          <Button variant="ghost" className="w-9 !px-0" aria-label="Remove variant" onClick={() => remove(index)}><Icon name="x" /></Button>
         </div>
       ))}
     </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import PageHeader from '../../components/PageHeader'
 import Button from '../../components/Button'
 import DataTable from '../../components/DataTable'
+import Icon from '../../components/Icon'
 import Pagination from '../../components/Pagination'
 import StatusBadge from '../../components/StatusBadge'
 import { Select } from '../../components/FormField'
@@ -24,7 +25,7 @@ export default function SubscriptionsPage() {
   return (
     <div>
       <PageHeader title="Subscriptions" subtitle="Quotations, active plans and renewals"
-        actions={<Button onClick={() => setCreating(true)}>+ New subscription</Button>} />
+        actions={<Button onClick={() => setCreating(true)}><Icon name="plus" /> New subscription</Button>} />
       <div className="mb-4 max-w-xs">
         <label htmlFor="status-filter" className="sr-only">Filter by status</label>
         <Select id="status-filter" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
@@ -33,7 +34,7 @@ export default function SubscriptionsPage() {
         </Select>
       </div>
       {isError ? (
-        <div role="alert" className="rounded-lg bg-rose-50 p-4 text-sm text-rose-700">
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
           {error.message} <button className="ml-2 underline" onClick={() => refetch()}>Retry</button>
         </div>
       ) : (

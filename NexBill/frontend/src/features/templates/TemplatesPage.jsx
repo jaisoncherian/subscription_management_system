@@ -2,6 +2,7 @@ import { useFieldArray } from 'react-hook-form'
 import { useQuery } from '@tanstack/react-query'
 import Button from '../../components/Button'
 import { FormField, Input, Select } from '../../components/FormField'
+import Icon from '../../components/Icon'
 import ResourcePage from '../../components/ResourcePage'
 import { plansApi, productsApi, taxesApi } from '../../api/catalog'
 import { templatesApi } from '../../api/templates'
@@ -18,7 +19,7 @@ function LineFields({ control, register, watch, formState: { errors }, products,
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-700">Lines</span>
+        <span className="text-[13px] font-medium text-slate-700">Lines</span>
         <Button variant="ghost" onClick={() => append({ product_id: '', variant_id: '', tax_id: '', quantity: 1 })}>+ Add line</Button>
       </div>
       {typeof errors.lines?.message === 'string' && <p className="text-xs text-rose-600" role="alert">{errors.lines.message}</p>}
@@ -27,7 +28,7 @@ function LineFields({ control, register, watch, formState: { errors }, products,
         const product = products.find((p) => p.id === Number(lines?.[index]?.product_id))
         const variants = (product?.variants ?? []).filter((v) => v.is_active)
         return (
-          <div key={field.id} className="space-y-2 rounded-lg border border-slate-200 p-3">
+          <div key={field.id} className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
             <FormField error={lineErrors?.product_id?.message}>
               <Select aria-label="Product" {...register(`lines.${index}.product_id`)}>
                 <option value="">Select a product…</option>
@@ -50,7 +51,7 @@ function LineFields({ control, register, watch, formState: { errors }, products,
               <FormField error={lineErrors?.quantity?.message}>
                 <Input aria-label="Quantity" type="number" min="1" {...register(`lines.${index}.quantity`)} />
               </FormField>
-              <Button variant="ghost" aria-label="Remove line" onClick={() => remove(index)}>✕</Button>
+              <Button variant="ghost" className="w-9 !px-0" aria-label="Remove line" onClick={() => remove(index)}><Icon name="x" /></Button>
             </div>
           </div>
         )

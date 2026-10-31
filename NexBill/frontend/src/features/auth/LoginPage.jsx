@@ -30,9 +30,9 @@ export default function LoginPage() {
 
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to your account"
-      footer={<>New here? <Link to="/signup" className="font-medium text-brand-600 hover:underline">Create an account</Link></>}>
+      footer={<>New here? <Link to="/signup" className="font-medium text-brand-600 hover:text-brand-700">Create an account</Link></>}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        {loginError && <div role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{loginError}</div>}
+        {loginError && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{loginError}</div>}
         <FormField label="Email" htmlFor="email" error={errors.email?.message}>
           <Input id="email" type="email" autoComplete="email" invalid={errors.email} {...register('email')} />
         </FormField>
@@ -40,7 +40,7 @@ export default function LoginPage() {
           <Input id="password" type="password" autoComplete="current-password" invalid={errors.password} {...register('password')} />
         </FormField>
         <div className="text-right text-sm">
-          <Link to="/forgot-password" className="text-brand-600 hover:underline">Forgot password?</Link>
+          <Link to="/forgot-password" className="font-medium text-brand-600 hover:text-brand-700">Forgot password?</Link>
         </div>
         <Button type="submit" loading={isSubmitting} className="w-full">Sign in</Button>
       </form>

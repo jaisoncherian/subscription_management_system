@@ -1,8 +1,11 @@
 """Invoices and payments. Staff and admins manage them, customers can read their own."""
-from flask import Blueprint, jsonify, render_template, request
+import secrets
+
+from flask import Blueprint, jsonify, make_response, render_template, request
 from flask_jwt_extended import get_current_user, jwt_required
 
 from app.core.decorators import roles_required
+from app.core.http import content_security_policy
 from app.models.enums import UserRole
 from app.schemas.invoice import (
     InvoiceListQuerySchema,
@@ -50,7 +53,11 @@ def get_invoice(invoice_id):
 @jwt_required()
 def print_invoice(invoice_id):
     invoice = invoice_service.get_invoice(get_current_user(), invoice_id)
-    return render_template("invoice.html", invoice=invoice)
+    # The page's one script, its print button, is allowed by a nonce for this response.
+    nonce = secrets.token_urlsafe(16)
+    response = make_response(render_template("invoice.html", invoice=invoice, nonce=nonce))
+    response.headers["Content-Security-Policy"] = content_security_policy(f"'nonce-{nonce}'")
+    return response
 
 
 @invoices_bp.post(f"/<int:invoice_id>/<any({ACTIONS}):action>")

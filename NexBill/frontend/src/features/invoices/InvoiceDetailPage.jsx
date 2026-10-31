@@ -5,6 +5,7 @@ import Button from '../../components/Button'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import DataTable from '../../components/DataTable'
 import EmptyState from '../../components/EmptyState'
+import Icon from '../../components/Icon'
 import PageHeader from '../../components/PageHeader'
 import Spinner from '../../components/Spinner'
 import StatusBadge from '../../components/StatusBadge'
@@ -17,10 +18,11 @@ import { paymentMethodLabel } from './paymentMethods'
 
 // How to display each action. Which ones apply comes from the API's allowed_actions.
 const ACTIONS = {
-  confirm: { label: 'Confirm', variant: 'primary' },
-  send: { label: 'Send to customer', variant: 'secondary' },
+  confirm: { label: 'Confirm', done: 'Invoice confirmed', variant: 'primary' },
+  send: { label: 'Send to customer', done: 'Invoice sent', variant: 'secondary' },
   cancel: {
     label: 'Cancel invoice',
+    done: 'Invoice cancelled',
     variant: 'danger',
     confirm: { title: 'Cancel this invoice?', message: 'A cancelled invoice stays on record, and its billing period cannot be billed again.' },
   },
@@ -55,7 +57,7 @@ export default function InvoiceDetailPage() {
   const run = async (action) => {
     try {
       await act.mutateAsync(action)
-      toast.success(`${ACTIONS[action].label} done`)
+      toast.success(ACTIONS[action].done)
     } catch (err) {
       toast.error(err.message)
     } finally {
@@ -75,14 +77,14 @@ export default function InvoiceDetailPage() {
   const customer = invoice.customer_snapshot
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      <Link to={backTo} className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 hover:text-slate-900"><Icon name="arrowLeft" /> Invoices</Link>
       <PageHeader
-        title={<span className="flex items-center gap-3">{invoice.invoice_number} <StatusBadge status={invoice.status} overdue={invoice.is_overdue} /></span>}
+        title={<span className="flex flex-wrap items-center gap-3">{invoice.invoice_number} <StatusBadge status={invoice.status} overdue={invoice.is_overdue} /></span>}
         subtitle={`${customer.name} · ${formatDate(invoice.period_start)} to ${formatDate(invoice.period_end)}`}
         actions={
           <>
-            <Link to={backTo}><Button variant="ghost">← Back</Button></Link>
-            <a href={invoicesApi.printUrl(id)} target="_blank" rel="noreferrer"><Button variant="secondary">Print</Button></a>
+            <a href={invoicesApi.printUrl(id)} target="_blank" rel="noreferrer"><Button variant="secondary"><Icon name="printer" /> Print</Button></a>
             {allowed.filter((a) => ACTIONS[a]).map((a) => (
               <Button key={a} variant={ACTIONS[a].variant} disabled={act.isPending} loading={act.isPending && act.variables === a}
                 onClick={() => (ACTIONS[a].confirm ? setPending(a) : run(a))}>
@@ -94,24 +96,24 @@ export default function InvoiceDetailPage() {
         }
       />
 
-      <section className="grid gap-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-3">
+      <section className="card grid gap-6 p-6 sm:grid-cols-3">
         <div className="text-sm">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Billed to</div>
-          <div className="mt-1 text-slate-900">{customer.name}</div>
+          <div className="eyebrow">Billed to</div>
+          <div className="mt-1.5 text-slate-900">{customer.name}</div>
           <div className="text-slate-500">{customer.email}</div>
         </div>
         <div className="text-sm">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Invoice date</div>
-          <div className="mt-1 text-slate-900">{formatDate(invoice.invoice_date)}</div>
+          <div className="eyebrow">Invoice date</div>
+          <div className="mt-1.5 text-slate-900">{formatDate(invoice.invoice_date)}</div>
         </div>
         <div className="text-sm">
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">Due date</div>
-          <div className="mt-1 text-slate-900">{formatDate(invoice.due_date)}</div>
+          <div className="eyebrow">Due date</div>
+          <div className="mt-1.5 text-slate-900">{formatDate(invoice.due_date)}</div>
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 font-semibold text-slate-900">Lines</h2>
+        <h2 className="mb-3 text-[15px] font-semibold">Lines</h2>
         <DataTable rows={invoice.lines}
           columns={[
             { key: 'description', header: 'Description' },
@@ -121,7 +123,7 @@ export default function InvoiceDetailPage() {
             { key: 'tax', header: 'Tax', render: (l) => (l.tax_name ? `${l.tax_name}: ${formatMoney(l.tax_amount)}` : '—') },
             { key: 'line_total', header: 'Total', className: 'text-right', render: (l) => formatMoney(l.line_total) },
           ]} />
-        <div className="mt-4 ml-auto max-w-xs space-y-2 text-sm">
+        <div className="card mt-4 ml-auto max-w-xs space-y-2 p-5 text-sm tabular-nums">
           <Total label="Subtotal" value={invoice.subtotal} />
           <Total label="Discount" value={invoice.discount_total} />
           <Total label="Tax" value={invoice.tax_total} />
@@ -132,8 +134,8 @@ export default function InvoiceDetailPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 font-semibold text-slate-900">Payments</h2>
-        <DataTable loading={payments.isLoading} rows={payments.data} empty={<EmptyState title="No payments yet" />}
+        <h2 className="mb-3 text-[15px] font-semibold">Payments</h2>
+        <DataTable loading={payments.isLoading} rows={payments.data} empty={<EmptyState icon="card" title="No payments yet" />}
           columns={[
             { key: 'payment_date', header: 'Date', render: (p) => formatDate(p.payment_date) },
             { key: 'method', header: 'Method', render: (p) => paymentMethodLabel(p.method) },

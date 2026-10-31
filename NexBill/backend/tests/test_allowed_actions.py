@@ -93,6 +93,22 @@ def test_invoice_actions_follow_its_status_and_payments(app):
     assert paid["allowed_actions"] == ["send"]
 
 
+def test_print_page_allows_only_its_own_script(app):
+    admin, _, customer_id, template_id = _setup(app)
+    make_active_subscription(app, admin, customer_id, template_id, start_date=date.today())
+    admin.post("/api/billing/run")
+    invoice_id = admin.get(INVOICES).get_json()["items"][0]["id"]
+
+    response = admin.get(f"{INVOICES}/{invoice_id}/print")
+
+    policy = response.headers["Content-Security-Policy"]
+    nonce = policy.split("'nonce-")[1].split("'")[0]
+    page = response.get_data(as_text=True)
+    assert f'<script nonce="{nonce}">' in page
+    assert "onclick" not in page
+    assert "unsafe-inline" not in policy.split("style-src")[0]
+
+
 def test_list_items_leave_out_allowed_actions(app):
     admin, _, customer_id, template_id = _setup(app)
     make_active_subscription(app, admin, customer_id, template_id)

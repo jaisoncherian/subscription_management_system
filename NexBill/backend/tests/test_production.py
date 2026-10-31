@@ -49,7 +49,8 @@ def test_every_response_has_security_headers(client):
 
     assert headers["X-Content-Type-Options"] == "nosniff"
     assert headers["X-Frame-Options"] == "DENY"
-    assert "script-src" not in headers["Content-Security-Policy"]
+    assert "script-src 'self';" in headers["Content-Security-Policy"]
+    assert "unsafe-inline" not in headers["Content-Security-Policy"].split("style-src")[0]
     assert "default-src 'self'" in headers["Content-Security-Policy"]
     assert "Strict-Transport-Security" not in headers
 

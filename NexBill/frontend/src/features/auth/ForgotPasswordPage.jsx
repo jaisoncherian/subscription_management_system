@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
     <AuthLayout title="Forgot password?" subtitle="We'll email you a reset link"
       footer={<Link to="/login" className="font-medium text-brand-600 hover:underline">Back to sign in</Link>}>
       {sent ? (
-        <div className="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-800" role="status">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-relaxed text-emerald-800" role="status">
           If an account exists for that email, a reset link is on its way. The link works once and expires in 30 minutes.
         </div>
       ) : (

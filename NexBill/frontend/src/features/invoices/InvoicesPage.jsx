@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import { Select } from '../../components/FormField'
+import Icon from '../../components/Icon'
 import ListPage from '../../components/ListPage'
 import StatusBadge from '../../components/StatusBadge'
 import { useToast } from '../../components/Toast'
@@ -39,7 +40,7 @@ export default function InvoicesPage() {
 
   return (
     <ListPage title="Invoices" subtitle="Created by the billing run, then confirmed and paid" queryKey={['invoices']} fetchPage={invoicesApi.list} params={params}
-      actions={user.role === 'admin' && <Button loading={billing.isPending} onClick={() => billing.mutate()}>Run billing</Button>}
+      actions={user.role === 'admin' && <Button loading={billing.isPending} onClick={() => billing.mutate()}>{!billing.isPending && <Icon name="play" />} Run billing</Button>}
       onRowClick={(r) => navigate(`/invoices/${r.id}`)}
       columns={[
         { key: 'invoice_number', header: 'Number', render: (r) => <span className="font-medium text-slate-900">{r.invoice_number}</span> },
@@ -47,7 +48,7 @@ export default function InvoicesPage() {
         { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} overdue={r.is_overdue} /> },
         { key: 'invoice_date', header: 'Date', render: (r) => formatDate(r.invoice_date) },
         { key: 'due_date', header: 'Due', render: (r) => formatDate(r.due_date) },
-        { key: 'total', header: 'Total', className: 'text-right', render: (r) => formatMoney(r.total) },
+        { key: 'total', header: 'Total', className: 'text-right', render: (r) => <span className="font-medium text-slate-900">{formatMoney(r.total)}</span> },
         { key: 'balance_due', header: 'Balance', className: 'text-right', render: (r) => formatMoney(r.balance_due) },
       ]}>
       <div className="mb-4 max-w-xs">

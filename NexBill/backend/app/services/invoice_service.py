@@ -130,7 +130,7 @@ def send_invoice(actor: User, invoice_id: int) -> Invoice:
 
     mail_service.send_email(
         invoice.customer_snapshot["email"],
-        f"Invoice {invoice.invoice_number} from Brightloop Software",
+        f"Invoice {invoice.invoice_number} from NexBill",
         _email_body(invoice),
     )
     return get_invoice(actor, invoice_id)
@@ -149,5 +149,5 @@ def _email_body(invoice: Invoice) -> str:
         f"Total: {invoice.total:.2f}\n"
         f"Balance due: {invoice.total - invoice.amount_paid:.2f}\n"
         f"Due date: {invoice.due_date}\n\n"
-        "Thank you,\nBrightloop Software"
+        "Thank you,\nNexBill"
     )

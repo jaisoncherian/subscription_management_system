@@ -61,7 +61,7 @@ class Config:
     SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
     SMTP_USERNAME = os.getenv("SMTP_USERNAME")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-    MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@brightloop.example")
+    MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@nexbill.example")
     MAIL_OUTBOX_DIR = None
 
 

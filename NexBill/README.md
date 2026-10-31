@@ -1,6 +1,6 @@
 # NexBill
 
-Subscription management system for Brightloop Software: products, plans, subscriptions, recurring invoicing, payments and revenue reporting.
+Subscription management system: products, plans, subscriptions, recurring invoicing, payments and revenue reporting.
 
 It covers the whole workflow: catalog, quotation templates, subscriptions, the billing run, invoices, payments, reports and a customer portal. See [docs/API.md](docs/API.md).
 
@@ -33,7 +33,7 @@ Open <http://localhost:5173> and log in:
 | Role | Email | Password |
 | ---- | ----- | -------- |
 | Admin | `ADMIN_EMAIL` in `.env` | `ADMIN_PASSWORD` in `.env` |
-| Staff | `sales@brightloop.example` | `DEMO_PASSWORD` in `.env` |
+| Staff | `sales@nexbill.example` | `DEMO_PASSWORD` in `.env` |
 | Customer | `ana@acme.example` | `DEMO_PASSWORD` in `.env` |
 
 Logins are limited to 5 per minute from one address, so avoid switching accounts too quickly during a demo.
