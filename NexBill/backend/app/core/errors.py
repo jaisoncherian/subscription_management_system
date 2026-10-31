@@ -25,6 +25,18 @@ class AppError(Exception):
         self.fields = fields or {}
 
 
+class Unauthorized(AppError):
+    status_code = 401
+    code = "unauthorized"
+    message = "Authentication is required."
+
+
+class ValidationFailed(AppError):
+    status_code = 422
+    code = "validation_error"
+    message = "The submitted data is invalid."
+
+
 class NotFound(AppError):
     status_code = 404
     code = "not_found"
@@ -107,3 +119,7 @@ def _register_jwt_error_handlers() -> None:
         return error_response(
             "fresh_token_required", "A fresh token is required.", 401
         )
+
+    @jwt.user_lookup_error_loader
+    def unknown_or_inactive_user(_header, _payload):
+        return error_response("unauthorized", "Authentication is required.", 401)
