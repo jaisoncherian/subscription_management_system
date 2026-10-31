@@ -8,6 +8,15 @@ from app.extensions import db, limiter
 from app.repositories import sequences
 
 
+def pytest_collection_modifyitems(items):
+    if not TestingConfig.SQLALCHEMY_DATABASE_URI.startswith("sqlite"):
+        return
+    skip = pytest.mark.skip(reason="needs PostgreSQL: set TEST_DATABASE_URL")
+    for item in items:
+        if "postgres" in item.keywords:
+            item.add_marker(skip)
+
+
 @pytest.fixture(autouse=True)
 def sqlite_sequences(monkeypatch):
     """SQLite has no sequences, so emulate them. PostgreSQL uses the real ones."""

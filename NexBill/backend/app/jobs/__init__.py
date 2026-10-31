@@ -4,11 +4,27 @@ from flask import Flask, current_app
 from flask.cli import with_appcontext
 
 from app.core.errors import AppError
-from app.services import user_service
+from app.services import billing_service, user_service
 
 
 def register_commands(app: Flask) -> None:
     app.cli.add_command(create_admin)
+    app.cli.add_command(run_billing)
+
+
+@click.command("run-billing")
+@with_appcontext
+def run_billing():
+    """Invoice every subscription that is due. Safe to run more than once."""
+    summary = billing_service.run_billing()
+    click.echo(
+        f"Invoices created: {summary['invoices_created']}, "
+        f"duplicates skipped: {summary['duplicates_skipped']}, "
+        f"subscriptions closed: {summary['subscriptions_closed']}, "
+        f"failures: {summary['failures']}"
+    )
+    if summary["failures"]:
+        raise click.ClickException("Some subscriptions failed. See the logs for details.")
 
 
 @click.command("create-admin")

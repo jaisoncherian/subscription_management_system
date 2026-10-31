@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Invoice {{ invoice.invoice_number }}</title>
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #17202e; margin: 40px auto; max-width: 760px; padding: 0 20px; }
+  h1 { margin: 0; font-size: 26px; }
+  .muted { color: #566274; }
+  .header, .parties { display: flex; justify-content: space-between; gap: 24px; }
+  .parties { margin: 28px 0; }
+  .parties p { margin: 2px 0; }
+  .status { font-weight: 600; text-transform: capitalize; }
+  .overdue { color: #b3261e; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 6px; border-bottom: 1px solid #d8dde5; text-align: right; vertical-align: top; }
+  th { font-size: 13px; color: #566274; }
+  th:first-child, td:first-child { text-align: left; }
+  .totals { margin: 20px 0 0 auto; width: 300px; }
+  .totals td { border: 0; padding: 4px 6px; }
+  .totals .grand td { border-top: 2px solid #17202e; font-weight: 700; padding-top: 8px; }
+  .print { margin-top: 28px; }
+  @media print { .print { display: none; } body { margin: 0; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>Invoice {{ invoice.invoice_number }}</h1>
+      <p class="muted">Brightloop Software</p>
+    </div>
+    <div>
+      <p class="status">{{ invoice.status }}</p>
+      {% if invoice.is_overdue %}<p class="overdue">Overdue</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="parties">
+    <div>
+      <p class="muted">Bill to</p>
+      {% set customer = invoice.customer_snapshot %}
+      <p><strong>{{ customer.name }}</strong></p>
+      <p>{{ customer.email }}</p>
+      {% if customer.address_line1 %}<p>{{ customer.address_line1 }}</p>{% endif %}
+      {% if customer.address_line2 %}<p>{{ customer.address_line2 }}</p>{% endif %}
+      {% if customer.city or customer.state or customer.postal_code %}
+        <p>{{ [customer.city, customer.state, customer.postal_code] | select | join(", ") }}</p>
+      {% endif %}
+      {% if customer.country %}<p>{{ customer.country }}</p>{% endif %}
+      {% if customer.tax_identifier %}<p>Tax ID: {{ customer.tax_identifier }}</p>{% endif %}
+    </div>
+    <div>
+      <p><span class="muted">Invoice date:</span> {{ invoice.invoice_date }}</p>
+      <p><span class="muted">Due date:</span> {{ invoice.due_date }}</p>
+      <p><span class="muted">Period:</span> {{ invoice.period_start }} to {{ invoice.period_end }}</p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Discount</th><th>Tax</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+      {% for line in invoice.lines %}
+      <tr>
+        <td>{{ line.description }}</td>
+        <td>{{ line.quantity }}</td>
+        <td>{{ "%.2f" | format(line.unit_price) }}</td>
+        <td>{{ "%.2f" | format(line.discount_amount) }}</td>
+        <td>
+          {{ "%.2f" | format(line.tax_amount) }}
+          {% if line.tax_name %}<br><span class="muted">{{ line.tax_name }}</span>{% endif %}
+        </td>
+        <td>{{ "%.2f" | format(line.line_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totals">
+    <tr><td>Subtotal</td><td>{{ "%.2f" | format(invoice.subtotal) }}</td></tr>
+    <tr><td>Discount</td><td>-{{ "%.2f" | format(invoice.discount_total) }}</td></tr>
+    <tr><td>Tax</td><td>{{ "%.2f" | format(invoice.tax_total) }}</td></tr>
+    <tr class="grand"><td>Total</td><td>{{ "%.2f" | format(invoice.total) }}</td></tr>
+    <tr><td>Paid</td><td>{{ "%.2f" | format(invoice.amount_paid) }}</td></tr>
+    <tr><td>Balance due</td><td>{{ "%.2f" | format(invoice.total - invoice.amount_paid) }}</td></tr>
+  </table>
+
+  <button class="print" onclick="window.print()">Print or save as PDF</button>
+</body>
+</html>

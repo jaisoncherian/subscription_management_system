@@ -4,10 +4,9 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 
 from app.core import clock
-from app.core.errors import Conflict, Forbidden, NotFound, ValidationFailed
+from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.models import Subscription, SubscriptionLine, User
 from app.models.enums import SubscriptionStatus as Status
-from app.models.enums import UserRole
 from app.repositories import (
     audit_repository,
     catalog_repository,
@@ -17,6 +16,7 @@ from app.repositories import (
     transaction,
 )
 from app.services import pricing_service
+from app.services.access import customer_scope
 from app.services.billing_periods import add_billing_period
 
 
@@ -205,7 +205,7 @@ def apply_action(actor: User, subscription_id: int, action: str) -> Subscription
 def get_subscription(viewer: User, subscription_id: int) -> Subscription:
     """Another customer's subscription looks exactly like one that does not exist."""
     subscription = subscription_repository.get_visible(
-        subscription_id, _customer_scope(viewer)
+        subscription_id, customer_scope(viewer)
     )
     if subscription is None:
         raise NotFound("Subscription not found.")
@@ -216,18 +216,8 @@ def list_subscriptions(
     viewer: User, status: str | None, page: int, per_page: int
 ) -> tuple[list[Subscription], int]:
     return subscription_repository.list_visible(
-        _customer_scope(viewer), status, page, per_page
+        customer_scope(viewer), status, page, per_page
     )
-
-
-def _customer_scope(viewer: User) -> int | None:
-    """None means every customer, which only staff and admins may have."""
-    if viewer.role != UserRole.CUSTOMER:
-        return None
-    if viewer.customer is None:
-        # Never fall through to None here: that would show everyone's data.
-        raise Forbidden()
-    return viewer.customer.id
 
 
 def _require_template_still_sellable(template) -> None:

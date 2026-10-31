@@ -111,6 +111,26 @@ def template_payload(catalog, name="Standard", validity_days=30, **overrides):
     }
 
 
+def make_active_subscription(
+    app, admin, customer_id, template_id, start_date=None, expires_on=None, discount_id=None
+):
+    """Create a subscription and move it to active. Returns its id."""
+    payload = {"customer_id": customer_id, "template_id": template_id}
+    if start_date:
+        payload["start_date"] = start_date.isoformat()
+    if expires_on:
+        payload["expires_on"] = expires_on.isoformat()
+    if discount_id:
+        payload["discount_id"] = discount_id
+    response = admin.post("/api/subscriptions", payload)
+    assert response.status_code == 201, response.get_json()
+    subscription_id = response.get_json()["id"]
+    for action in ("send-quotation", "confirm", "activate"):
+        response = admin.post(f"/api/subscriptions/{subscription_id}/{action}")
+        assert response.status_code == 200, response.get_json()
+    return subscription_id
+
+
 def assert_error(response, status, code):
     assert response.status_code == status, response.get_json()
     body = response.get_json()

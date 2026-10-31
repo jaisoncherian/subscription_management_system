@@ -524,3 +524,9 @@ def test_login_is_required_to_read(app):
 )
 def test_add_billing_period(start, period, interval, expected):
     assert add_billing_period(start, period, interval) == expected
+
+
+def test_anchor_day_returns_to_the_original_day_of_the_month():
+    assert add_billing_period(date(2026, 2, 28), "monthly", anchor_day=31) == date(2026, 3, 31)
+    assert add_billing_period(date(2026, 3, 31), "monthly", anchor_day=31) == date(2026, 4, 30)
+    assert add_billing_period(date(2029, 2, 28), "yearly", anchor_day=29) == date(2030, 2, 28)

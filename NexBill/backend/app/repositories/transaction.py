@@ -8,3 +8,8 @@ def commit() -> None:
 
 def rollback() -> None:
     db.session.rollback()
+
+
+def savepoint():
+    """A context manager. An exception inside undoes only the work inside it."""
+    return db.session.begin_nested()

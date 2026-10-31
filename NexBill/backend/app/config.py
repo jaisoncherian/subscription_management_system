@@ -36,6 +36,8 @@ class Config:
     ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
+    INVOICE_PAYMENT_TERMS_DAYS = int(os.getenv("INVOICE_PAYMENT_TERMS_DAYS", "15"))
+
     # Used to build the link in password reset emails.
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
