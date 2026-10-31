@@ -2,12 +2,41 @@
 
 Subscription management system for Brightloop Software: products, plans, subscriptions, recurring invoicing, payments and revenue reporting.
 
-The backend core is complete: authentication and roles, quotation templates, the subscription state machine, pricing, the billing run, invoices and payments. See [docs/API.md](docs/API.md). Catalog CRUD, the customer list, reports and the frontend are built separately.
+It covers the whole workflow: catalog, quotation templates, subscriptions, the billing run, invoices, payments, reports and a customer portal. See [docs/API.md](docs/API.md).
 
 **Backend:** Python 3.11+, Flask, Flask-SQLAlchemy, Flask-Migrate, PostgreSQL, marshmallow,
 Flask-JWT-Extended, argon2-cffi, Flask-Limiter, pytest.
 
-**Frontend:** to be set up in `frontend/`.
+**Frontend:** React, Vite, Tailwind CSS, TanStack Query, React Hook Form, zod.
+
+## Run a demo
+
+Once setup below is done, this fills the database with six months of demo data. Set `DEMO_PASSWORD` in `.env` first. It refuses to run in production, and running it again changes nothing.
+
+```bash
+cd backend
+flask seed-demo
+```
+
+Then start both servers, each in its own terminal:
+
+```bash
+# backend/
+flask run
+
+# frontend/ (run npm install the first time)
+npm run dev
+```
+
+Open <http://localhost:5173> and log in:
+
+| Role | Email | Password |
+| ---- | ----- | -------- |
+| Admin | `ADMIN_EMAIL` in `.env` | `ADMIN_PASSWORD` in `.env` |
+| Staff | `sales@brightloop.example` | `DEMO_PASSWORD` in `.env` |
+| Customer | `ana@acme.example` | `DEMO_PASSWORD` in `.env` |
+
+Logins are limited to 5 per minute from one address, so avoid switching accounts too quickly during a demo.
 
 ## Setup
 
@@ -115,7 +144,7 @@ Use `flask run --debug` to get auto-reload while developing.
 pytest
 ```
 
-By default the tests use an in-memory SQLite database, so they need neither PostgreSQL nor a `.env` file.
+Without `TEST_DATABASE_URL`, the tests use an in-memory SQLite database, so they need neither PostgreSQL nor a `.env` file. With it, each parallel test worker makes its own database next to it, named like `nexbill_test_gw0`. Tests refuse to run against the dev database.
 
 **Run them on PostgreSQL before trusting a billing change.** The billing and concurrency tests need real row locks and savepoints, so they are skipped on SQLite. Set `TEST_DATABASE_URL` to a separate, empty database. The tests create and drop every table in it, so never point it at a database you care about.
 
@@ -126,6 +155,46 @@ Invoices are created by the billing run. Run it on a daily schedule in productio
 ```bash
 flask run-billing
 ```
+
+### 11. Check the whole workflow
+
+With the server running, this exercises every step over HTTP and stops at the first failure. It creates data, so point the server at a database you do not mind filling.
+
+```bash
+python scripts/e2e_smoke.py
+```
+
+## Going live
+
+The app serves the built frontend itself, so production needs one server behind HTTPS.
+
+```bash
+cd frontend
+npm ci
+npm run build
+
+cd ../backend
+pip install -r requirements.txt
+flask db upgrade
+flask create-admin
+python serve.py
+```
+
+With `APP_ENV=production`, the app refuses to start on example or short secrets, on SQLite, or without `FRONTEND_URL`. Session cookies are then HTTPS-only.
+
+Before opening it to real users:
+
+1. **Generate new secrets.** Use new values for `SECRET_KEY`, `JWT_SECRET_KEY` and `ADMIN_PASSWORD`: `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+2. **Use a dedicated database role** with a strong password, not the `postgres` superuser.
+3. **Put a reverse proxy with HTTPS in front**, such as Caddy or nginx, forwarding to `127.0.0.1:5000`. Set `FRONTEND_URL` to the public address and `TRUSTED_PROXY_COUNT=1`. Without that setting, every client shares one rate limit.
+4. **Configure `SMTP_HOST`**, or password reset and invoice emails are dropped.
+5. **Schedule `flask run-billing` daily**, with Windows Task Scheduler or cron.
+6. **Back up the database**, for example with a daily `pg_dump`, and test a restore.
+7. **Point an uptime check at `/api/health/ready`**, which also proves the database answers.
+
+Run `serve.py` as a single process, because rate limits are kept in memory. To run several, set `RATELIMIT_STORAGE_URI` to a shared store such as Redis.
+
+To rehearse production on your own machine over plain HTTP, also set `JWT_COOKIE_SECURE=false` and `FRONTEND_URL=http://localhost:5000`. Never do that on a real server.
 
 ## Configuration
 
@@ -143,6 +212,10 @@ Settings come from environment variables, or from `NexBill/.env`. Real environme
 | `JWT_SECRET_KEY`                         | JWT signing key                                           |
 | `RATELIMIT_STORAGE_URI`                  | Optional rate limit store. Defaults to in-memory          |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`          | Credentials for `flask create-admin`                      |
+| `DEMO_PASSWORD`                          | Password for the accounts made by `flask seed-demo`       |
+| `TRUSTED_PROXY_COUNT`                    | Number of reverse proxies in front of the app. Defaults to 0 |
+| `JWT_COOKIE_SECURE`                      | Production only. `false` allows plain HTTP, for a rehearsal |
+| `HOST`, `PORT`, `THREADS`                | Optional settings for `serve.py`                          |
 | `FRONTEND_URL`                           | Base of the link in password reset emails                 |
 | `INVOICE_PAYMENT_TERMS_DAYS`             | Days until an invoice falls due. Defaults to 15           |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | Optional email server. See below |
@@ -164,9 +237,11 @@ NexBill/
       repositories/  Data access
       services/      Business logic
       routes/        Blueprints
-      jobs/          Background jobs
+      jobs/          CLI commands and demo data
     migrations/      Alembic migrations
+    scripts/         End-to-end workflow check
+    serve.py         Production server
     tests/
-  frontend/
+  frontend/          React app. features/ holds one folder per area
   docs/API.md        Endpoints and error format
 ```

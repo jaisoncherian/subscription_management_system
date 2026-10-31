@@ -64,6 +64,10 @@ def record_payment(
     return payment
 
 
+def list_all(page: int, page_size: int) -> tuple[list[Payment], int]:
+    return invoice_repository.list_all_payments(page, page_size)
+
+
 def list_payments(viewer: User, invoice_id: int) -> list[Payment]:
     # Goes through the invoice first, so that customer scoping applies.
     invoice = invoice_service.get_invoice(viewer, invoice_id)

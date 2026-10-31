@@ -4,14 +4,22 @@ import LoginPage from '../features/auth/LoginPage'
 import SignupPage from '../features/auth/SignupPage'
 import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
+import DiscountsPage from '../features/catalog/DiscountsPage'
+import PlansPage from '../features/catalog/PlansPage'
+import ProductsPage from '../features/catalog/ProductsPage'
+import TaxesPage from '../features/catalog/TaxesPage'
+import CustomersPage from '../features/customers/CustomersPage'
+import InvoiceDetailPage from '../features/invoices/InvoiceDetailPage'
+import InvoicesPage from '../features/invoices/InvoicesPage'
+import PaymentsPage from '../features/payments/PaymentsPage'
+import PortalInvoicesPage from '../features/portal/PortalInvoicesPage'
+import PortalSubscriptionsPage from '../features/portal/PortalSubscriptionsPage'
 import DashboardPage from '../features/reports/DashboardPage'
+import StaffPage from '../features/staff/StaffPage'
 import SubscriptionsPage from '../features/subscriptions/SubscriptionsPage'
 import SubscriptionDetailPage from '../features/subscriptions/SubscriptionDetailPage'
+import TemplatesPage from '../features/templates/TemplatesPage'
 import { HomeRedirect, PublicOnly, RequireAuth, RequireRole } from './guards'
-import ComingSoon from './ComingSoon'
-
-const STAFF_PATHS = ['invoices', 'payments', 'customers', 'templates', 'products']
-const ADMIN_PATHS = ['plans', 'taxes', 'discounts', 'staff']
 
 export default function AppRoutes() {
   return (
@@ -30,14 +38,23 @@ export default function AppRoutes() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/subscriptions" element={<SubscriptionsPage />} />
             <Route path="/subscriptions/:id" element={<SubscriptionDetailPage />} />
-            {STAFF_PATHS.map((p) => <Route key={p} path={`/${p}`} element={<ComingSoon />} />)}
+            <Route path="/invoices" element={<InvoicesPage />} />
+            <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+            <Route path="/payments" element={<PaymentsPage />} />
+            <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/products" element={<ProductsPage />} />
           </Route>
           <Route element={<RequireRole roles={['admin']} />}>
-            {ADMIN_PATHS.map((p) => <Route key={p} path={`/${p}`} element={<ComingSoon />} />)}
+            <Route path="/plans" element={<PlansPage />} />
+            <Route path="/taxes" element={<TaxesPage />} />
+            <Route path="/discounts" element={<DiscountsPage />} />
+            <Route path="/staff" element={<StaffPage />} />
           </Route>
           <Route element={<RequireRole roles={['customer']} />}>
-            <Route path="/portal" element={<ComingSoon />} />
-            <Route path="/portal/invoices" element={<ComingSoon />} />
+            <Route path="/portal" element={<PortalSubscriptionsPage />} />
+            <Route path="/portal/invoices" element={<PortalInvoicesPage />} />
+            <Route path="/portal/invoices/:id" element={<InvoiceDetailPage />} />
           </Route>
         </Route>
       </Route>

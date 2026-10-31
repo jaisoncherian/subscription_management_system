@@ -75,9 +75,9 @@ def get_template(template_id: int) -> QuotationTemplate:
 
 
 def list_templates(
-    page: int, per_page: int, include_inactive: bool
+    page: int, page_size: int, include_inactive: bool
 ) -> tuple[list[QuotationTemplate], int]:
-    return quotation_template_repository.list_page(page, per_page, include_inactive)
+    return quotation_template_repository.list_page(page, page_size, include_inactive)
 
 
 def _require_active_plan(plan_id: int) -> Plan:

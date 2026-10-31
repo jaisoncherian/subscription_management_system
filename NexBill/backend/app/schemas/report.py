@@ -1,15 +1,15 @@
 """Marshmallow validation for report query params."""
 from __future__ import annotations
 
-from marshmallow import Schema, ValidationError, fields, validates_schema
+from marshmallow import Schema, ValidationError, fields, validate, validates_schema
 
 
 class ReportDateRangeSchema(Schema):
     date_from = fields.Date(load_default=None)
     date_to = fields.Date(load_default=None)
     group = fields.String(load_default="month")
-    page = fields.Integer(load_default=1, validate=lambda value: value > 0)
-    page_size = fields.Integer(load_default=25, validate=lambda value: 1 <= value <= 200)
+    page = fields.Integer(load_default=1, validate=validate.Range(min=1))
+    page_size = fields.Integer(load_default=25, validate=validate.Range(min=1, max=100))
 
     @validates_schema
     def validate_date_order(self, data, **kwargs):
@@ -23,4 +23,4 @@ class ReportDateRangeSchema(Schema):
 
 
 class RevenueGroupSchema(ReportDateRangeSchema):
-    group = fields.String(required=True, validate=lambda value: value in {"month"})
+    group = fields.String(required=True, validate=validate.OneOf(["month"]))

@@ -1,189 +1,130 @@
 from __future__ import annotations
 
+from datetime import date
+from decimal import Decimal
+
 import pytest
 from flask_jwt_extended import create_access_token
-from sqlalchemy import text
 
-from app import create_app
 from app.extensions import db
+from app.models import (
+    Customer,
+    Invoice,
+    Payment,
+    Plan,
+    Product,
+    Subscription,
+    SubscriptionLine,
+)
 from app.models.user import User
 
 
 @pytest.fixture
-def reports_app():
-    app = create_app("testing")
+def reports_app(app):
     app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
     with app.app_context():
-        User.__table__.create(db.engine)
         db.session.add_all(
             [
                 User(id=201, email="reports-admin@example.test", password_hash="unused", full_name="Reports Admin", role="admin"),
                 User(id=202, email="reports-staff@example.test", password_hash="unused", full_name="Reports Staff", role="staff", staff_function="finance_lead"),
                 User(id=203, email="reports-customer@example.test", password_hash="unused", full_name="Reports Customer", role="customer"),
+                Customer(id=1, name="Customer One", email="one@example.test"),
+                Customer(id=2, name="Customer Two", email="two@example.test"),
+                Customer(id=3, name="Customer Three", email="three@example.test"),
+                Plan(id=1, name="Monthly", billing_period="monthly"),
+                Plan(id=2, name="Yearly", billing_period="yearly"),
+                Plan(id=3, name="Weekly", billing_period="weekly"),
+                Plan(id=4, name="Daily", billing_period="daily"),
+                Product(id=1, name="Hosting", sales_price=Decimal("0.00")),
             ]
         )
         db.session.flush()
-        db.session.execute(
-            text(
-                """
-                CREATE TABLE customers (
-                    id INTEGER PRIMARY KEY,
-                    user_id INTEGER NOT NULL
-                )
-                """
-            )
+        db.session.add_all(
+            [
+                _subscription(1, 1, 1, "active", "2025-01-01", "2026-01-01", "2025-02-01"),
+                _subscription(2, 1, 2, "active", "2025-01-10", "2026-01-10", "2026-01-10"),
+                _subscription(3, 2, 3, "active", "2025-02-01", "2025-08-01", "2025-02-08"),
+                _subscription(4, 2, 4, "active", "2025-03-01", "2026-03-01", "2025-04-01"),
+                _subscription(5, 3, 4, "closed", "2025-04-01", "2025-05-01", "2025-05-01"),
+            ]
         )
-        db.session.execute(
-            text(
-                """
-                CREATE TABLE plans (
-                    id INTEGER PRIMARY KEY,
-                    price NUMERIC(12,2) NOT NULL,
-                    billing_period VARCHAR(20) NOT NULL
-                )
-                """
-            )
+        db.session.flush()
+        db.session.add_all(
+            [
+                _line(1, 1, 2, "100.00"),
+                _line(2, 2, 1, "1200.00"),
+                _line(3, 3, 3, "20.00"),
+                _line(4, 4, 5, "7.00"),
+                _line(5, 5, 1, "7.00"),
+                _invoice(1, "INV-001", 1, 1, "confirmed", "2025-01-05", "2025-01-20", "500.00", "300.00"),
+                _invoice(2, "INV-002", 2, 1, "confirmed", "2025-02-05", "2025-02-20", "220.00", "200.00"),
+                _invoice(3, "INV-003", 3, 2, "cancelled", "2025-02-10", "2025-02-25", "120.00", "0.00"),
+                _invoice(4, "INV-004", 4, 2, "confirmed", "2024-12-10", "2024-12-20", "300.00", "100.00"),
+                _invoice(5, "INV-005", 3, 2, "confirmed", "2025-03-05", "2025-03-30", "90.00", "90.00"),
+            ]
         )
-        db.session.execute(
-            text(
-                """
-                CREATE TABLE subscriptions (
-                    id INTEGER PRIMARY KEY,
-                    number VARCHAR(50) NOT NULL,
-                    customer_id INTEGER NOT NULL,
-                    plan_id INTEGER,
-                    status VARCHAR(20) NOT NULL,
-                    start_date DATE,
-                    expiry_date DATE,
-                    next_billing_date DATE
-                )
-                """
-            )
-        )
-        db.session.execute(
-            text(
-                """
-                CREATE TABLE subscription_lines (
-                    id INTEGER PRIMARY KEY,
-                    subscription_id INTEGER NOT NULL,
-                    plan_id INTEGER NOT NULL,
-                    quantity INTEGER NOT NULL
-                )
-                """
-            )
-        )
-        db.session.execute(
-            text(
-                """
-                CREATE TABLE invoices (
-                    id INTEGER PRIMARY KEY,
-                    number VARCHAR(50) NOT NULL,
-                    subscription_id INTEGER,
-                    customer_id INTEGER NOT NULL,
-                    status VARCHAR(20) NOT NULL,
-                    issue_date DATE,
-                    due_date DATE,
-                    subtotal NUMERIC(12,2),
-                    tax_total NUMERIC(12,2),
-                    discount_total NUMERIC(12,2),
-                    total NUMERIC(12,2) NOT NULL
-                )
-                """
-            )
-        )
-        db.session.execute(
-            text(
-                """
-                CREATE TABLE payments (
-                    id INTEGER PRIMARY KEY,
-                    invoice_id INTEGER NOT NULL,
-                    method VARCHAR(20) NOT NULL,
-                    amount NUMERIC(12,2) NOT NULL,
-                    paid_on DATE NOT NULL
-                )
-                """
-            )
-        )
-
-        db.session.execute(
-            text(
-                """
-                INSERT INTO customers (id, user_id) VALUES
-                    (1, 101),
-                    (2, 102),
-                    (3, 103)
-                """
-            )
-        )
-        db.session.execute(
-            text(
-                """
-                INSERT INTO plans (id, price, billing_period) VALUES
-                    (1, 100.00, 'monthly'),
-                    (2, 1200.00, 'yearly'),
-                    (3, 20.00, 'weekly'),
-                    (4, 7.00, 'daily')
-                """
-            )
-        )
-        db.session.execute(
-            text(
-                """
-                INSERT INTO subscriptions (id, number, customer_id, plan_id, status, start_date, expiry_date, next_billing_date) VALUES
-                    (1, 'SUB-001', 1, 1, 'active', '2025-01-01', '2026-01-01', '2025-02-01'),
-                    (2, 'SUB-002', 1, 2, 'active', '2025-01-10', '2026-01-10', '2026-01-10'),
-                    (3, 'SUB-003', 2, 3, 'active', '2025-02-01', '2025-08-01', '2025-02-08'),
-                    (4, 'SUB-004', 2, 4, 'active', '2025-03-01', '2026-03-01', '2025-04-01'),
-                    (5, 'SUB-005', 3, 4, 'cancelled', '2025-04-01', '2025-05-01', '2025-05-01')
-                """
-            )
-        )
-        db.session.execute(
-            text(
-                """
-                INSERT INTO subscription_lines (id, subscription_id, plan_id, quantity) VALUES
-                    (1, 1, 1, 2),
-                    (2, 2, 2, 1),
-                    (3, 3, 3, 3),
-                    (4, 4, 4, 5),
-                    (5, 5, 4, 1)
-                """
-            )
-        )
-        db.session.execute(
-            text(
-                """
-                INSERT INTO invoices (id, number, subscription_id, customer_id, status, issue_date, due_date, subtotal, tax_total, discount_total, total) VALUES
-                    (1, 'INV-001', 1, 1, 'confirmed', '2025-01-05', '2025-01-20', 500.00, 0.00, 0.00, 500.00),
-                    (2, 'INV-002', 2, 1, 'confirmed', '2025-02-05', '2025-02-20', 220.00, 0.00, 0.00, 220.00),
-                    (3, 'INV-003', 3, 2, 'cancelled', '2025-02-10', '2025-02-25', 120.00, 0.00, 0.00, 120.00),
-                    (4, 'INV-004', 4, 2, 'confirmed', '2024-12-10', '2024-12-20', 300.00, 0.00, 0.00, 300.00),
-                    (5, 'INV-005', 3, 2, 'confirmed', '2025-03-05', '2025-03-30', 90.00, 0.00, 0.00, 90.00)
-                """
-            )
-        )
-        db.session.execute(
-            text(
-                """
-                INSERT INTO payments (id, invoice_id, method, amount, paid_on) VALUES
-                    (1, 1, 'card', 300.00, '2025-01-10'),
-                    (2, 2, 'bank', 200.00, '2025-02-06'),
-                    (3, 4, 'card', 100.00, '2025-01-02'),
-                    (4, 5, 'bank', 90.00, '2025-03-08')
-                """
-            )
+        db.session.flush()
+        db.session.add_all(
+            [
+                _payment(1, 1, "card", "300.00", "2025-01-10"),
+                _payment(2, 2, "bank_transfer", "200.00", "2025-02-06"),
+                _payment(3, 4, "card", "100.00", "2025-01-02"),
+                _payment(4, 5, "bank_transfer", "90.00", "2025-03-08"),
+            ]
         )
         db.session.commit()
         yield app
-        db.session.execute(text("DROP TABLE IF EXISTS payments"))
-        db.session.execute(text("DROP TABLE IF EXISTS invoices"))
-        db.session.execute(text("DROP TABLE IF EXISTS subscription_lines"))
-        db.session.execute(text("DROP TABLE IF EXISTS subscriptions"))
-        db.session.execute(text("DROP TABLE IF EXISTS plans"))
-        db.session.execute(text("DROP TABLE IF EXISTS customers"))
-        db.session.execute(text("DROP TABLE IF EXISTS users"))
-        db.session.commit()
-        db.session.remove()
+
+
+def _subscription(id, customer_id, plan_id, status, start, expires, next_billing):
+    return Subscription(
+        id=id,
+        subscription_number=f"SUB-00{id}",
+        customer_id=customer_id,
+        plan_id=plan_id,
+        status=status,
+        start_date=date.fromisoformat(start),
+        expires_on=date.fromisoformat(expires),
+        next_billing_date=date.fromisoformat(next_billing),
+    )
+
+
+def _line(id, subscription_id, quantity, unit_price):
+    return SubscriptionLine(
+        id=id,
+        subscription_id=subscription_id,
+        product_id=1,
+        quantity=quantity,
+        unit_price=Decimal(unit_price),
+    )
+
+
+def _invoice(id, number, subscription_id, customer_id, status, invoice_date, due_date, total, paid):
+    return Invoice(
+        id=id,
+        invoice_number=number,
+        subscription_id=subscription_id,
+        customer_id=customer_id,
+        customer_snapshot={"name": "Snapshot"},
+        status=status,
+        period_start=date.fromisoformat(invoice_date),
+        period_end=date.fromisoformat(invoice_date),
+        invoice_date=date.fromisoformat(invoice_date),
+        due_date=date.fromisoformat(due_date),
+        subtotal=Decimal(total),
+        total=Decimal(total),
+        amount_paid=Decimal(paid),
+    )
+
+
+def _payment(id, invoice_id, method, amount, payment_date):
+    return Payment(
+        id=id,
+        invoice_id=invoice_id,
+        method=method,
+        amount=Decimal(amount),
+        payment_date=date.fromisoformat(payment_date),
+    )
 
 
 @pytest.fixture
@@ -204,9 +145,9 @@ def test_summary_numbers_match_handbuilt_dataset(staff_client):
     assert response.status_code == 200
     data = response.get_json()
     assert data["active_subscriptions"] == 4
-    assert data["mrr"] == 1624.5833333333333
-    assert data["revenue_collected"] == 690.0
-    assert data["outstanding"] == 420.0
+    assert data["mrr"] == "1624.58"
+    assert data["revenue_collected"] == "690.00"
+    assert data["outstanding"] == "420.00"
     assert data["overdue_count"] == 3
 
 
@@ -218,8 +159,8 @@ def test_revenue_endpoint_groups_by_month(staff_client):
 
     assert response.status_code == 200
     payload = response.get_json()
-    assert any(item["period"] == "2025-01-01" and item["invoiced"] == 500.0 and item["collected"] == 400.0 for item in payload)
-    assert any(item["period"] == "2025-02-01" and item["invoiced"] == 340.0 and item["collected"] == 200.0 for item in payload)
+    assert any(item["period"] == "2025-01-01" and item["invoiced"] == "500.00" and item["collected"] == "400.00" for item in payload)
+    assert any(item["period"] == "2025-02-01" and item["invoiced"] == "220.00" and item["collected"] == "200.00" for item in payload)
 
 
 def test_overdue_excludes_paid_cancelled_and_not_due(staff_client):
@@ -229,7 +170,7 @@ def test_overdue_excludes_paid_cancelled_and_not_due(staff_client):
     payload = response.get_json()
     assert payload["total"] == 3
     assert [item["invoice_id"] for item in payload["items"]] == [4, 1, 2]
-    assert payload["items"][0]["balance"] == 200.0
+    assert payload["items"][0]["balance"] == "200.00"
     assert payload["items"][0]["days_overdue"] > 0
 
 
@@ -248,3 +189,35 @@ def test_customer_cannot_access_reports(staff_client):
 
     assert response.status_code == 403
     assert response.get_json()["error"]["code"] == "forbidden"
+
+
+def test_summary_with_a_date_range_runs_on_the_real_schema(staff_client):
+    response = staff_client.get(
+        "/api/reports/summary?date_from=2025-01-01&date_to=2025-01-31",
+        headers=auth_header("admin"),
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["revenue_collected"] == "400.00"
+
+
+@pytest.mark.parametrize(
+    "query", ["page=0", "page=-1", "page_size=0", "page_size=101"]
+)
+def test_invalid_pagination_returns_422(staff_client, query):
+    response = staff_client.get(f"/api/reports/overdue?{query}", headers=auth_header("staff"))
+
+    assert response.status_code == 422
+
+
+def test_unknown_revenue_group_returns_422(staff_client):
+    response = staff_client.get("/api/reports/revenue?group=year", headers=auth_header("staff"))
+
+    assert response.status_code == 422
+
+
+def test_enormous_page_number_does_not_overflow_the_database(staff_client):
+    response = staff_client.get(f"/api/reports/overdue?page={10**30}", headers=auth_header("staff"))
+
+    assert response.status_code == 200
+    assert response.get_json()["items"] == []

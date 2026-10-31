@@ -24,6 +24,9 @@ class Config:
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Replaces a connection the database dropped, instead of failing a request.
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
+    MAX_CONTENT_LENGTH = 1024 * 1024
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
     DEBUG = False
     TESTING = False
@@ -38,6 +41,15 @@ class Config:
 
     ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+    # Password for the accounts made by `flask seed-demo`.
+    DEMO_PASSWORD = os.getenv("DEMO_PASSWORD")
+
+    IS_PRODUCTION = False
+    # Number of reverse proxies in front of the app, so that rate limits see the
+    # real client address. Leave at 0 when clients connect directly.
+    TRUSTED_PROXY_COUNT = int(os.getenv("TRUSTED_PROXY_COUNT", "0"))
+    # The built frontend. Served by the app when it exists.
+    FRONTEND_DIST = str(Path(__file__).resolve().parents[2] / "frontend" / "dist")
 
     INVOICE_PAYMENT_TERMS_DAYS = int(os.getenv("INVOICE_PAYMENT_TERMS_DAYS", "15"))
 
@@ -66,10 +78,14 @@ class TestingConfig(Config):
     # only behave for real there; SQLite is the zero-setup fallback.
     SQLALCHEMY_DATABASE_URI = TEST_DATABASE_URL or "sqlite:///:memory:"
     RATELIMIT_ENABLED = False
+    FRONTEND_DIST = None
 
 
 class ProductionConfig(Config):
-    JWT_COOKIE_SECURE = True
+    IS_PRODUCTION = True
+    # Only set to false to rehearse production on http://localhost.
+    JWT_COOKIE_SECURE = os.getenv("JWT_COOKIE_SECURE", "true").lower() != "false"
+    FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 
 _CONFIGS = {

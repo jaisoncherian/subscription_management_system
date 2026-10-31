@@ -6,6 +6,7 @@ from app.core import clock
 from app.core.errors import Conflict, NotFound
 from app.models import Invoice, User
 from app.models.enums import InvoiceStatus as Status
+from app.models.enums import UserRole
 from app.repositories import audit_repository, invoice_repository, transaction
 from app.services import mail_service
 from app.services.access import customer_scope
@@ -50,7 +51,26 @@ def get_invoice(viewer: User, invoice_id: int) -> Invoice:
     if row is None:
         raise NotFound("Invoice not found.")
     invoice, invoice.is_overdue = row
+    invoice.allowed_actions = _allowed_actions(viewer, invoice)
     return invoice
+
+
+def _allowed_actions(viewer: User, invoice: Invoice) -> list[str]:
+    """Tell the client which buttons to show, so it never repeats these rules."""
+    if viewer.role == UserRole.CUSTOMER:
+        return []
+    actions = [
+        action
+        for action, transition in TRANSITIONS.items()
+        if invoice.status in transition.sources
+    ]
+    if invoice.amount_paid > 0 and "cancel" in actions:
+        actions.remove("cancel")
+    if invoice.status in (Status.CONFIRMED, Status.PAID):
+        actions.append("send")
+    if invoice.status == Status.CONFIRMED:
+        actions.append("pay")
+    return actions
 
 
 def list_invoices(

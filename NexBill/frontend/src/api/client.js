@@ -22,16 +22,6 @@ function toQuery(params) {
 }
 
 export async function api(path, { method = 'GET', body, params } = {}) {
-  if (import.meta.env.VITE_USE_MOCK === 'true') {
-    const { mockRequest } = await import('../mocks/handler')
-    try {
-      return await mockRequest(path, { method, body, params })
-    } catch (e) {
-      if (e.status === 401 && e.code !== 'invalid_credentials') onUnauthorized()
-      throw e
-    }
-  }
-
   const headers = {}
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (method !== 'GET' && csrfToken()) headers['X-CSRF-TOKEN'] = csrfToken()

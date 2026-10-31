@@ -1,4 +1,4 @@
-"""Read-only catalog lookups. Catalog create and edit live with the catalog feature."""
+"""Queries for the catalog: products, variants, taxes, plans and discounts."""
 from app.extensions import db
 from app.models import Discount, Plan, Product, ProductVariant, Tax
 
@@ -21,3 +21,26 @@ def get_tax(tax_id: int) -> Tax | None:
 
 def get_discount(discount_id: int) -> Discount | None:
     return db.session.get(Discount, discount_id)
+
+
+def get_product_by_name(name: str) -> Product | None:
+    return db.session.scalar(db.select(Product).where(Product.name == name))
+
+
+def get(model, item_id: int):
+    return db.session.get(model, item_id)
+
+
+def add(item):
+    """Raises IntegrityError if the item's unique name or code is already taken."""
+    db.session.add(item)
+    db.session.flush()
+    return item
+
+
+def list_page(model, page: int, page_size: int) -> tuple[list, int]:
+    """One page of a catalog model, oldest first, and the total count."""
+    result = db.paginate(
+        db.select(model).order_by(model.id), page=page, per_page=page_size, error_out=False
+    )
+    return result.items, result.total

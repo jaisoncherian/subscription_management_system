@@ -1,11 +1,49 @@
 import itertools
+import os
 
+import psycopg
 import pytest
+from sqlalchemy.engine import make_url
 
 from app import create_app
-from app.config import TestingConfig
+from app.config import Config, TestingConfig
 from app.extensions import db, limiter
 from app.repositories import sequences
+
+
+def _use_a_separate_database():
+    """Keep tests off the dev database, and pytest-xdist workers off each other."""
+    uri = TestingConfig.SQLALCHEMY_DATABASE_URI
+    if uri.startswith("sqlite"):
+        return
+    url = make_url(uri)
+    if Config.SQLALCHEMY_DATABASE_URI and url.database == make_url(Config.SQLALCHEMY_DATABASE_URI).database:
+        pytest.exit("TEST_DATABASE_URL must not point at the dev database.", returncode=1)
+
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    if not worker:
+        return
+    # Every test creates and drops all tables, so each worker needs its own database.
+    name = f"{url.database}_{worker}"
+    with psycopg.connect(
+        host=url.host,
+        port=url.port,
+        user=url.username,
+        password=url.password,
+        dbname=url.database,
+        autocommit=True,
+    ) as connection:
+        exists = connection.execute(
+            "SELECT 1 FROM pg_database WHERE datname = %s", (name,)
+        ).fetchone()
+        if not exists:
+            connection.execute(f'CREATE DATABASE "{name}"')
+    TestingConfig.SQLALCHEMY_DATABASE_URI = url.set(database=name).render_as_string(
+        hide_password=False
+    )
+
+
+_use_a_separate_database()
 
 
 def pytest_collection_modifyitems(items):

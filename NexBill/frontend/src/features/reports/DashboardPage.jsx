@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1)
   const summary = useSummary(range)
   const revenue = useRevenue(range)
-  const overdue = useOverdue({ page, per_page: 5 })
+  const overdue = useOverdue({ page, page_size: 5 })
   const s = summary.data
   const set = (key) => (e) => setRange((r) => ({ ...r, [key]: e.target.value }))
 
@@ -46,7 +46,7 @@ export default function DashboardPage() {
       </div>
 
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 font-semibold text-slate-900">Revenue, last 6 months</h2>
+        <h2 className="mb-4 font-semibold text-slate-900">Revenue by month</h2>
         {revenue.isLoading ? (
           <div className="flex h-52 items-center justify-center"><Spinner className="h-6 w-6" /></div>
         ) : (
@@ -59,10 +59,11 @@ export default function DashboardPage() {
         <DataTable
           loading={overdue.isLoading}
           rows={overdue.data?.items}
-          onRowClick={(r) => navigate(`/invoices/${r.id}`)}
+          getRowKey={(r) => r.invoice_id}
+          onRowClick={(r) => navigate(`/invoices/${r.invoice_id}`)}
           columns={[
             { key: 'number', header: 'Invoice' },
-            { key: 'customer', header: 'Customer', render: (r) => r.customer_snapshot?.full_name },
+            { key: 'customer', header: 'Customer', render: (r) => r.customer },
             { key: 'due_date', header: 'Due', render: (r) => formatDate(r.due_date) },
             { key: 'days_overdue', header: 'Days overdue', render: (r) => <span className="font-medium text-rose-600">{r.days_overdue} days</span> },
             { key: 'balance', header: 'Balance', className: 'text-right', render: (r) => formatMoney(r.balance) },

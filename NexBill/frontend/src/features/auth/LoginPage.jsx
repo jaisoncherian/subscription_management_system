@@ -44,12 +44,6 @@ export default function LoginPage() {
         </div>
         <Button type="submit" loading={isSubmitting} className="w-full">Sign in</Button>
       </form>
-      <div className="mt-6 rounded-lg bg-slate-100 p-3 text-xs text-slate-600">
-        <p className="mb-1 font-medium">Demo logins (mock mode)</p>
-        <p>admin@brightloop.com / Admin@12345</p>
-        <p>staff@brightloop.com / Staff@12345</p>
-        <p>customer@brightloop.com / Customer@123</p>
-      </div>
     </AuthLayout>
   )
 }

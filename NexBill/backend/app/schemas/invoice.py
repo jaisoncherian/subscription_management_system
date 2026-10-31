@@ -38,6 +38,8 @@ class InvoiceSchema(Schema):
     invoice_number = fields.String()
     status = fields.String()
     is_overdue = fields.Boolean()
+    # Only set on a single invoice, not in lists. See invoice_service.
+    allowed_actions = fields.List(fields.String())
     subscription_id = fields.Integer()
     customer_id = fields.Integer()
     customer_snapshot = fields.Dict()
@@ -70,6 +72,8 @@ class PaymentCreateSchema(Schema):
 class PaymentSchema(Schema):
     id = fields.Integer()
     invoice_id = fields.Integer()
+    invoice_number = fields.String(attribute="invoice.invoice_number")
+    customer_name = fields.Function(lambda payment: payment.invoice.customer_snapshot.get("name"))
     method = fields.String()
     amount = fields.Decimal(as_string=True, places=2)
     payment_date = fields.Date()

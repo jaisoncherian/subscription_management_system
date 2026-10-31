@@ -19,7 +19,7 @@ export default function SubscriptionsPage() {
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState('')
   const [creating, setCreating] = useState(false)
-  const { data, isLoading, isError, error, refetch } = useSubscriptions({ page, per_page: PER_PAGE, status })
+  const { data, isLoading, isError, error, refetch } = useSubscriptions({ page, page_size: PER_PAGE, status })
 
   return (
     <div>
@@ -43,9 +43,9 @@ export default function SubscriptionsPage() {
             rows={data?.items}
             onRowClick={(r) => navigate(`/subscriptions/${r.id}`)}
             columns={[
-              { key: 'number', header: 'Number', render: (r) => <span className="font-medium text-slate-900">{r.number}</span> },
-              { key: 'customer', header: 'Customer', render: (r) => r.customer?.full_name },
-              { key: 'plan', header: 'Plan', render: (r) => r.plan?.name },
+              { key: 'number', header: 'Number', render: (r) => <span className="font-medium text-slate-900">{r.subscription_number}</span> },
+              { key: 'customer', header: 'Customer', render: (r) => r.customer_name },
+              { key: 'plan', header: 'Plan', render: (r) => r.plan_name },
               { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
               { key: 'next', header: 'Next billing', render: (r) => formatDate(r.next_billing_date) },
               { key: 'expires', header: 'Expires', render: (r) => formatDate(r.expires_on) },

@@ -158,5 +158,5 @@ def test_unknown_template_returns_404(app):
 def test_pagination_limits_are_enforced(app):
     admin = make_admin(app)
 
-    assert_error(admin.get(URL, query_string={"per_page": 101}), 422, "validation_error")
+    assert_error(admin.get(URL, query_string={"page_size": 101}), 422, "validation_error")
     assert_error(admin.get(URL, query_string={"page": 0}), 422, "validation_error")
