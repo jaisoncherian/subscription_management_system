@@ -1,5 +1,6 @@
 """Environment-driven configuration."""
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -24,6 +25,14 @@ class Config:
     DEBUG = False
     TESTING = False
 
+    # The JWT lives in an httpOnly cookie, so browser JavaScript cannot read it.
+    # CSRF protection is on because cookies are sent automatically.
+    JWT_TOKEN_LOCATION = ["cookies"]
+    JWT_COOKIE_CSRF_PROTECT = True
+    JWT_COOKIE_SAMESITE = "Lax"
+    JWT_COOKIE_SECURE = False
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -33,12 +42,14 @@ class TestingConfig(Config):
     TESTING = True
     SECRET_KEY = "test-secret-key-not-used-outside-pytest"
     JWT_SECRET_KEY = "test-jwt-secret-key-not-used-outside-pytest"
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    # Set TEST_DATABASE_URL to run on PostgreSQL. Row locks and SKIP LOCKED
+    # only behave for real there; SQLite is the zero-setup fallback.
+    SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
     RATELIMIT_ENABLED = False
 
 
 class ProductionConfig(Config):
-    pass
+    JWT_COOKIE_SECURE = True
 
 
 _CONFIGS = {

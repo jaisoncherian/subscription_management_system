@@ -1,6 +1,8 @@
 # NexBill
 
-Subscription management system. This repository currently holds the project skeleton only.
+Subscription management system for Brightloop Software: products, plans, subscriptions, recurring invoicing, payments and revenue reporting.
+
+So far this repository holds the skeleton and the database schema. No business endpoints exist yet.
 
 **Backend:** Python 3.11+, Flask, Flask-SQLAlchemy, Flask-Migrate, PostgreSQL, marshmallow,
 Flask-JWT-Extended, argon2-cffi, Flask-Limiter, pytest.
@@ -72,13 +74,22 @@ CREATE DATABASE nexbill OWNER nexbill;
 
 From `backend/`:
 
+`backend/migrations/` is already in this repository, with the initial schema, so a new setup only needs:
+
 ```bash
-flask db init      # Only if backend/migrations/ does not exist yet. It is already in this repository.
+flask db upgrade
+```
+
+After changing a model, generate and apply a new migration:
+
+```bash
 flask db migrate -m "describe the change"
 flask db upgrade
 ```
 
-Until models exist, `flask db migrate` reports `No changes in schema detected` and creates no migration file. That is expected.
+Only run `flask db init` if `backend/migrations/` is missing. It fails if the folder already exists.
+
+Autogenerate does not detect standalone sequences. Add any new `db.Sequence` to the migration by hand.
 
 ### 7. Run the app
 
@@ -96,7 +107,9 @@ Use `flask run --debug` to get auto-reload while developing.
 pytest
 ```
 
-The tests use an in-memory SQLite database, so they need neither PostgreSQL nor a `.env` file.
+By default the tests use an in-memory SQLite database, so they need neither PostgreSQL nor a `.env` file.
+
+To run them on PostgreSQL, set `TEST_DATABASE_URL` to a separate, empty database. The tests create and drop every table in it, so never point it at a database you care about.
 
 ## Configuration
 
@@ -109,6 +122,7 @@ Settings come from environment variables, or from `NexBill/.env`. Real environme
 | `APP_ENV`                                | `development` (default), `testing` or `production`        |
 | `DATABASE_URL`                           | PostgreSQL connection URL                                 |
 | `DB_PASSWORD`                            | Password for the `docker-compose.yml` database            |
+| `TEST_DATABASE_URL`                      | Optional PostgreSQL database for `pytest`                 |
 | `SECRET_KEY`                             | Flask secret key                                          |
 | `JWT_SECRET_KEY`                         | JWT signing key                                           |
 | `RATELIMIT_STORAGE_URI`                  | Optional rate limit store. Defaults to in-memory          |
