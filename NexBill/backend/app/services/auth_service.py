@@ -46,7 +46,7 @@ def login(email: str, password: str) -> tuple[User, str]:
     if user is None:
         burn_password_check(password)
         raise _invalid_credentials()
-    if not verify_password(user.password_hash, password) or not user.is_active:
+    if not verify_password(password, user.password_hash) or not user.is_active:
         raise _invalid_credentials()
 
     if password_hash_is_outdated(user.password_hash):

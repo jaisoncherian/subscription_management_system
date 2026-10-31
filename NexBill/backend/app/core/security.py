@@ -24,16 +24,16 @@ def hash_password(password: str) -> str:
     return _hasher.hash(password)
 
 
-def verify_password(password_hash: str, password: str) -> bool:
+def verify_password(password: str, password_hash: str) -> bool:
     try:
         return _hasher.verify(password_hash, password)
-    except (VerificationError, InvalidHashError):
+    except (VerificationError, InvalidHashError, TypeError):
         return False
 
 
 def burn_password_check(password: str) -> None:
     """Spend the time of a real verification, for an account that does not exist."""
-    verify_password(_DUMMY_HASH, password)
+    verify_password(password, _DUMMY_HASH)
 
 
 def password_hash_is_outdated(password_hash: str) -> bool:
