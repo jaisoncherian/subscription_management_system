@@ -1,172 +1,325 @@
-# NexBill
+# NexBill – Subscription Management System
 
-Subscription management system for Brightloop Software: products, plans, subscriptions, recurring invoicing, payments and revenue reporting.
+<p align="center">
+  <strong>A Modern Platform for Subscription, Billing and Revenue Management</strong>
+</p>
 
-The backend core is complete: authentication and roles, quotation templates, the subscription state machine, pricing, the billing run, invoices and payments. See [docs/API.md](docs/API.md). Catalog CRUD, the customer list, reports and the frontend are built separately.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.13-blue?logo=python" />
+  <img src="https://img.shields.io/badge/Flask-Backend-black?logo=flask" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Database-4169E1?logo=postgresql" />
+  <img src="https://img.shields.io/badge/Pytest-Testing-0A9EDC?logo=pytest" />
+  <img src="https://img.shields.io/badge/Status-Active_Development-success" />
+</p>
 
-**Backend:** Python 3.11+, Flask, Flask-SQLAlchemy, Flask-Migrate, PostgreSQL, marshmallow,
-Flask-JWT-Extended, argon2-cffi, Flask-Limiter, pytest.
+---
 
-**Frontend:** to be set up in `frontend/`.
+## Overview
 
-## Setup
+**NexBill** is a subscription management and billing platform designed to simplify subscription tracking, invoice management, customer administration and financial reporting.
 
-### 1. Clone
+The platform provides a centralized system for managing customer subscriptions, monitoring payment statuses, tracking outstanding invoices and analyzing business revenue.
+
+NexBill aims to make subscription operations more organized, transparent and efficient through a structured backend architecture and role-based access control.
+
+## Key Features
+
+### 1. Customer Management
+- Customer registration and account management.
+- Customer information and record management.
+- Secure authentication.
+- Customer-specific data access.
+
+### 2. Subscription Management
+- Manage customer subscriptions.
+- Track subscription information and statuses.
+- Associate subscriptions with customer records.
+- Provide customers access to their own subscriptions.
+
+### 3. Invoice Management
+- Manage customer invoices.
+- Track invoice payment statuses.
+- Identify overdue invoices.
+- Provide customers access to their own invoices.
+
+### 4. Reports and Analytics
+- Business summary reports.
+- Revenue analysis grouped by month.
+- Overdue invoice reporting.
+- Date-range-based report filtering.
+- Pagination for report data.
+
+### 5. Authentication and Security
+- Password hashing using Argon2.
+- JWT-based authentication.
+- Role-based access control.
+- Protected API endpoints.
+- Customer and staff access separation.
+
+### 6. Backend Performance and Testing
+- Modular Flask application architecture.
+- Database integration using SQLAlchemy.
+- Automated testing with Pytest.
+- Parallel test execution using pytest-xdist.
+- Structured application logging and error handling.
+
+## Technology Stack
+
+| Component | Technology |
+|---|---|
+| Backend | Python, Flask |
+| Database | PostgreSQL |
+| ORM | Flask-SQLAlchemy |
+| Database Migrations | Flask-Migrate |
+| Authentication | Flask-JWT-Extended |
+| Password Security | Argon2 |
+| Rate Limiting | Flask-Limiter |
+| Testing | Pytest |
+| Parallel Testing | pytest-xdist |
+| Version Control | Git and GitHub |
+
+## Project Structure
+
+```text
+NexBill/
+│
+├── backend/
+│   ├── app/
+│   │   ├── core/
+│   │   │   ├── security.py
+│   │   │   ├── errors.py
+│   │   │   └── logging.py
+│   │   │
+│   │   ├── routes/
+│   │   ├── models/
+│   │   ├── jobs/
+│   │   ├── config.py
+│   │   ├── extensions.py
+│   │   └── __init__.py
+│   │
+│   ├── tests/
+│   ├── migrations/
+│   ├── requirements.txt
+│   ├── pytest.ini
+│   └── .env.example
+│
+└── README.md
+```
+
+*The structure above describes the backend organization; additional frontend and deployment directories can be included as the project evolves.*
+
+## Installation and Setup
+
+### Prerequisites
+
+Install the following before running the project:
+
+- Python 3.13
+- PostgreSQL
+- Git
+- Visual Studio Code (recommended)
+
+### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone YOUR_GITHUB_REPOSITORY_URL
+```
+
+```bash
 cd NexBill
 ```
 
-### 2. Create a virtual environment
+### 2. Navigate to Backend
 
 ```bash
 cd backend
+```
+
+### 3. Create a Virtual Environment
+
+Windows PowerShell:
+
+```powershell
 python -m venv venv
 ```
 
 Activate it:
 
-```bash
-# Windows PowerShell
-venv\Scripts\Activate.ps1
-
-# macOS / Linux
-source venv/bin/activate
+```powershell
+.\venv\Scripts\Activate.ps1
 ```
 
-### 3. Install dependencies
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Create your `.env`
+### 5. Configure Environment Variables
 
-From the `backend/` folder:
+Create a `.env` file using the provided example:
 
-```bash
-# Windows PowerShell
-copy ..\.env.example ..\.env
-
-# macOS / Linux
-cp ../.env.example ../.env
+```powershell
+Copy-Item .env.example .env
 ```
 
-Then replace the dummy values in `NexBill/.env`. The password in `DATABASE_URL` must match `DB_PASSWORD`.
+Configure your local database connection and the required application secrets according to `app/config.py`.
 
-### 5. Start the database
+Example database configuration:
 
-With Docker, from the `NexBill/` folder:
-
-```bash
-docker compose up -d
+```env
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/nexbill
 ```
 
-Or use a local PostgreSQL server instead. Stop here if it already uses port 5432 and you meant to use Docker, because the two will clash. Create the role and database as a superuser, using your `DB_PASSWORD` value:
+**Security:** Never commit `.env` files, database passwords or secret keys to GitHub.
+
+### 6. Configure PostgreSQL
+
+Create a PostgreSQL database named:
 
 ```sql
-CREATE ROLE nexbill LOGIN PASSWORD 'your-db-password';
-CREATE DATABASE nexbill OWNER nexbill;
+CREATE DATABASE nexbill;
 ```
 
-### 6. Run migrations
+Ensure PostgreSQL is running and the credentials in `.env` match your local configuration.
 
-From `backend/`:
+### 7. Initialize Database Migrations
 
-`backend/migrations/` is already in this repository, with the initial schema, so a new setup only needs:
+If the project uses Flask-Migrate, apply the existing migrations:
 
 ```bash
 flask db upgrade
 ```
 
-After changing a model, generate and apply a new migration:
+Ensure the Flask application is configured correctly before executing migration commands.
+
+### 8. Run the Backend
+
+Use the project's configured Flask entry point. For example, if `app` is the application package:
 
 ```bash
-flask db migrate -m "describe the change"
-flask db upgrade
+flask --app app run --debug
 ```
 
-Only run `flask db init` if `backend/migrations/` is missing. It fails if the folder already exists.
-
-Autogenerate does not detect standalone sequences. Add any new `db.Sequence` to the migration by hand.
-
-### 7. Create the admin
-
-Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env`, then run this once. Running it again changes nothing.
-
-```bash
-flask create-admin
-```
-
-### 8. Run the app
-
-```bash
-flask run
-```
-
-Check it at <http://127.0.0.1:5000/api/health>. It should return `{"status": "ok"}`.
-
-Use `flask run --debug` to get auto-reload while developing.
-
-### 9. Run the tests
-
-```bash
-pytest
-```
-
-By default the tests use an in-memory SQLite database, so they need neither PostgreSQL nor a `.env` file.
-
-**Run them on PostgreSQL before trusting a billing change.** The billing and concurrency tests need real row locks and savepoints, so they are skipped on SQLite. Set `TEST_DATABASE_URL` to a separate, empty database. The tests create and drop every table in it, so never point it at a database you care about.
-
-### 10. Run billing
-
-Invoices are created by the billing run. Run it on a daily schedule in production. It is safe to run more than once.
-
-```bash
-flask run-billing
-```
-
-## Configuration
-
-Settings come from environment variables, or from `NexBill/.env`. Real environment variables take priority.
-
-`DATABASE_URL`, `SECRET_KEY` and `JWT_SECRET_KEY` are required: the app refuses to start without them.
-
-| Variable                                 | Purpose                                                   |
-| ---------------------------------------- | --------------------------------------------------------- |
-| `APP_ENV`                                | `development` (default), `testing` or `production`        |
-| `DATABASE_URL`                           | PostgreSQL connection URL                                 |
-| `DB_PASSWORD`                            | Password for the `docker-compose.yml` database            |
-| `TEST_DATABASE_URL`                      | Optional PostgreSQL database for `pytest`                 |
-| `SECRET_KEY`                             | Flask secret key                                          |
-| `JWT_SECRET_KEY`                         | JWT signing key                                           |
-| `RATELIMIT_STORAGE_URI`                  | Optional rate limit store. Defaults to in-memory          |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD`          | Credentials for `flask create-admin`                      |
-| `FRONTEND_URL`                           | Base of the link in password reset emails                 |
-| `INVOICE_PAYMENT_TERMS_DAYS`             | Days until an invoice falls due. Defaults to 15           |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | Optional email server. See below |
-| `OLLAMA_URL`, `OLLAMA_MODEL`             | Reserved for the Ollama integration. Not used yet         |
-
-### Email in development
-
-Without `SMTP_HOST`, development writes each email to a file in `backend/dev_outbox/`, which is git-ignored. Open the newest file to get a password reset link. In production without `SMTP_HOST`, emails are dropped and a warning is logged.
-
-## Project layout
+The development server will normally be available at:
 
 ```text
-NexBill/
-  backend/
-    app/
-      core/          Errors, logging, security, decorators
-      models/        SQLAlchemy models
-      schemas/       Marshmallow schemas
-      repositories/  Data access
-      services/      Business logic
-      routes/        Blueprints
-      jobs/          Background jobs
-    migrations/      Alembic migrations
-    tests/
-  frontend/
-  docs/API.md        Endpoints and error format
+http://127.0.0.1:5000
 ```
+
+## Running Tests
+
+NexBill uses Pytest for automated backend testing.
+
+Run the complete test suite:
+
+```bash
+python -m pytest tests -v
+```
+
+Run tests with parallel workers:
+
+```bash
+python -m pytest tests -n 4 -v
+```
+
+View detailed test results and skipped-test reasons:
+
+```bash
+python -m pytest tests -v -ra
+```
+
+Run a specific test module:
+
+```bash
+python -m pytest tests/test_auth.py -v
+```
+
+**Testing note:** PostgreSQL-dependent tests require a correctly configured and accessible test database. Skipped tests should be reviewed before considering the backend fully verified.
+
+## API Modules
+
+The backend organizes its functionality into API modules.
+
+| Module | Purpose |
+|---|---|
+| Authentication | Registration, login and identity verification |
+| Customer Portal | Customer-specific subscriptions and invoices |
+| Reports | Business summaries, revenue and overdue reports |
+| Core Security | JWT callbacks and password verification |
+
+Example API endpoints:
+
+```text
+/api/portal/subscriptions
+/api/portal/invoices
+/api/reports/summary
+/api/reports/revenue
+/api/reports/overdue
+```
+
+Protected endpoints require the appropriate authentication credentials and user permissions.
+
+## Security Practices
+
+NexBill follows security-focused development practices:
+
+- Passwords are stored using Argon2 hashing.
+- JWT authentication protects restricted endpoints.
+- Role-based authorization separates customer and staff access.
+- Environment variables are used for sensitive configuration.
+- Database credentials are not intended to be committed to source control.
+- Rate limiting helps control excessive API requests.
+
+## Development Workflow
+
+The project uses Git and GitHub for collaborative development.
+
+Recommended workflow:
+
+1. Create a feature branch.
+2. Implement and test changes locally.
+3. Review modified files.
+4. Commit changes with meaningful messages.
+5. Push the feature branch.
+6. Open a Pull Request targeting `main`.
+7. Review and merge after verification.
+
+Example:
+
+```bash
+git checkout -b feature/new-feature
+git add .
+git commit -m "Add new feature"
+git push -u origin feature/new-feature
+```
+
+## Future Enhancements
+
+Potential improvements include:
+
+- Automated recurring billing.
+- Payment gateway integration.
+- Subscription renewal notifications.
+- Advanced financial dashboards.
+- Exportable invoice and revenue reports.
+- Email notifications and reminders.
+- Deployment with production-grade infrastructure.
+
+## Contribution
+
+Contributions, suggestions and improvements are welcome.
+
+For significant changes, create a feature branch and submit a Pull Request for review.
+
+## License
+
+Specify the appropriate license for this repository before distributing or reusing the project.
+
+---
+
+<p align="center">
+  <strong>NexBill</strong>
+  <br/>
+  Simplifying Subscription Management. Streamlining Billing. Empowering Business Insights.
+</p>
