@@ -4,10 +4,13 @@ import LoginPage from '../features/auth/LoginPage'
 import SignupPage from '../features/auth/SignupPage'
 import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import ResetPasswordPage from '../features/auth/ResetPasswordPage'
+import DashboardPage from '../features/reports/DashboardPage'
+import SubscriptionsPage from '../features/subscriptions/SubscriptionsPage'
+import SubscriptionDetailPage from '../features/subscriptions/SubscriptionDetailPage'
 import { HomeRedirect, PublicOnly, RequireAuth, RequireRole } from './guards'
 import ComingSoon from './ComingSoon'
 
-const STAFF_PATHS = ['dashboard', 'subscriptions', 'invoices', 'payments', 'customers', 'templates', 'products']
+const STAFF_PATHS = ['invoices', 'payments', 'customers', 'templates', 'products']
 const ADMIN_PATHS = ['plans', 'taxes', 'discounts', 'staff']
 
 export default function AppRoutes() {
@@ -24,6 +27,9 @@ export default function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
           <Route element={<RequireRole roles={['admin', 'staff']} />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/subscriptions" element={<SubscriptionsPage />} />
+            <Route path="/subscriptions/:id" element={<SubscriptionDetailPage />} />
             {STAFF_PATHS.map((p) => <Route key={p} path={`/${p}`} element={<ComingSoon />} />)}
           </Route>
           <Route element={<RequireRole roles={['admin']} />}>
