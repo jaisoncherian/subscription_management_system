@@ -6,12 +6,23 @@ from sqlalchemy import text
 
 from app import create_app
 from app.extensions import db
+from app.models.user import User
 
 
 @pytest.fixture
 def reports_app():
     app = create_app("testing")
+    app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
     with app.app_context():
+        User.__table__.create(db.engine)
+        db.session.add_all(
+            [
+                User(id=201, email="reports-admin@example.test", password_hash="unused", full_name="Reports Admin", role="admin"),
+                User(id=202, email="reports-staff@example.test", password_hash="unused", full_name="Reports Staff", role="staff", staff_function="finance_lead"),
+                User(id=203, email="reports-customer@example.test", password_hash="unused", full_name="Reports Customer", role="customer"),
+            ]
+        )
+        db.session.flush()
         db.session.execute(
             text(
                 """
@@ -170,6 +181,7 @@ def reports_app():
         db.session.execute(text("DROP TABLE IF EXISTS subscriptions"))
         db.session.execute(text("DROP TABLE IF EXISTS plans"))
         db.session.execute(text("DROP TABLE IF EXISTS customers"))
+        db.session.execute(text("DROP TABLE IF EXISTS users"))
         db.session.commit()
         db.session.remove()
 
@@ -181,7 +193,8 @@ def staff_client(reports_app):
 
 
 def auth_header(role: str):
-    token = create_access_token(identity=f"user-{role}", additional_claims={"roles": [role]})
+    user_id = {"admin": 201, "staff": 202, "customer": 203}[role]
+    token = create_access_token(identity=str(user_id), additional_claims={"roles": [role]})
     return {"Authorization": f"Bearer {token}"}
 
 

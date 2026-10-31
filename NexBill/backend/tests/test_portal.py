@@ -6,12 +6,23 @@ from sqlalchemy import text
 
 from app import create_app
 from app.extensions import db
+from app.models.user import User
 
 
 @pytest.fixture
 def portal_app():
     app = create_app("testing")
+    app.config["JWT_TOKEN_LOCATION"] = ["headers", "cookies"]
     with app.app_context():
+        User.__table__.create(db.engine)
+        db.session.add_all(
+            [
+                User(id=101, email="portal-customer-1@example.test", password_hash="unused", full_name="Customer One", role="customer"),
+                User(id=102, email="portal-customer-2@example.test", password_hash="unused", full_name="Customer Two", role="customer"),
+                User(id=103, email="portal-staff@example.test", password_hash="unused", full_name="Portal Staff", role="staff", staff_function="support"),
+            ]
+        )
+        db.session.flush()
         db.session.execute(text("CREATE TABLE customers (id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL)"))
         db.session.execute(text("CREATE TABLE plans (id INTEGER PRIMARY KEY, price NUMERIC(12,2), billing_period VARCHAR(20))"))
         db.session.execute(
@@ -102,6 +113,7 @@ def portal_app():
         db.session.execute(text("DROP TABLE IF EXISTS subscriptions"))
         db.session.execute(text("DROP TABLE IF EXISTS plans"))
         db.session.execute(text("DROP TABLE IF EXISTS customers"))
+        db.session.execute(text("DROP TABLE IF EXISTS users"))
         db.session.commit()
         db.session.remove()
 
@@ -113,6 +125,8 @@ def customer_client(portal_app):
 
 
 def bearer_for_user(user_id: int, role: str = "customer"):
+    if role == "staff":
+        user_id = 103
     token = create_access_token(identity=str(user_id), additional_claims={"roles": [role]})
     return {"Authorization": f"Bearer {token}"}
 

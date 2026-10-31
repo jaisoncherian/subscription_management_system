@@ -6,7 +6,9 @@ from app.routes.billing import billing_bp
 from app.routes.customers import customers_bp
 from app.routes.health import health_bp
 from app.routes.invoices import invoices_bp
+from app.routes.portal import portal_bp
 from app.routes.quotation_templates import quotation_templates_bp
+from app.routes.reports import reports_bp
 from app.routes.staff import staff_bp
 from app.routes.subscriptions import subscriptions_bp
 
@@ -20,3 +22,5 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(billing_bp)
     app.register_blueprint(invoices_bp)
     app.register_blueprint(customers_bp)
+    app.register_blueprint(portal_bp)
+    app.register_blueprint(reports_bp)

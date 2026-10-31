@@ -3,10 +3,13 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 
 # NexBill/.env, regardless of the working directory. Real environment variables win.
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL") or dotenv_values(
+    Path(__file__).resolve().parents[1] / ".env"
+).get("TEST_DATABASE_URL")
 
 # Flask setting -> environment variable that provides it.
 REQUIRED_SETTINGS = {
@@ -61,7 +64,7 @@ class TestingConfig(Config):
     JWT_SECRET_KEY = "test-jwt-secret-key-not-used-outside-pytest"
     # Set TEST_DATABASE_URL to run on PostgreSQL. Row locks and SKIP LOCKED
     # only behave for real there; SQLite is the zero-setup fallback.
-    SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
+    SQLALCHEMY_DATABASE_URI = TEST_DATABASE_URL or "sqlite:///:memory:"
     RATELIMIT_ENABLED = False
 
 
