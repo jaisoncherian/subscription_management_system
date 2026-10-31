@@ -1,5 +1,7 @@
 # Secrets
 .env
+# Development emails, which contain live password reset links
+dev_outbox/
 
 # Python
 __pycache__/
