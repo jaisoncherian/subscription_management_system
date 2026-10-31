@@ -6,7 +6,7 @@ from app.models.base import TimestampMixin, enum_check
 from app.models.enums import StaffFunction, UserRole
 
 
-def _normalize_email(email: str | None) -> str | None:
+def normalize_email(email: str | None) -> str | None:
     return email.strip().lower() if email else email
 
 
@@ -35,7 +35,7 @@ class User(TimestampMixin, db.Model):
 
     @validates("email")
     def _lowercase_email(self, _key, email):
-        return _normalize_email(email)
+        return normalize_email(email)
 
 
 class Customer(TimestampMixin, db.Model):
@@ -62,7 +62,7 @@ class Customer(TimestampMixin, db.Model):
 
     @validates("email")
     def _lowercase_email(self, _key, email):
-        return _normalize_email(email)
+        return normalize_email(email)
 
 
 class PasswordResetToken(db.Model):

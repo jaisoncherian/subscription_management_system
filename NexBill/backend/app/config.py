@@ -33,9 +33,24 @@ class Config:
     JWT_COOKIE_SECURE = False
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
 
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+    # Used to build the link in password reset emails.
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+    # Without SMTP_HOST, email goes to MAIL_OUTBOX_DIR if set, otherwise nowhere.
+    SMTP_HOST = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+    MAIL_FROM = os.getenv("MAIL_FROM", "no-reply@brightloop.example")
+    MAIL_OUTBOX_DIR = None
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
+    MAIL_OUTBOX_DIR = str(Path(__file__).resolve().parents[1] / "dev_outbox")
 
 
 class TestingConfig(Config):

@@ -24,6 +24,8 @@ from app.models import (
 )
 from app.models.enums import BillingPeriod, DiscountType, PaymentMethod
 
+pytestmark = pytest.mark.usefixtures("app_context")
+
 PERIOD_START = date(2026, 1, 1)
 
 
