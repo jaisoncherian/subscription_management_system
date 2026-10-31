@@ -22,6 +22,16 @@ function toQuery(params) {
 }
 
 export async function api(path, { method = 'GET', body, params } = {}) {
+  if (import.meta.env.VITE_USE_MOCK === 'true') {
+    const { mockRequest } = await import('../mocks/handler')
+    try {
+      return await mockRequest(path, { method, body, params })
+    } catch (e) {
+      if (e.status === 401 && e.code !== 'invalid_credentials') onUnauthorized()
+      throw e
+    }
+  }
+
   const headers = {}
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (method !== 'GET' && csrfToken()) headers['X-CSRF-TOKEN'] = csrfToken()
@@ -41,7 +51,6 @@ export async function api(path, { method = 'GET', body, params } = {}) {
       data?.error ?? { code: 'server_error', message: 'Something went wrong.' },
       response.status,
     )
-    // invalid_credentials must be shown on the login form, not redirected
     if (response.status === 401 && err.code !== 'invalid_credentials') onUnauthorized()
     throw err
   }
