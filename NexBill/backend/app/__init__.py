@@ -4,7 +4,9 @@ from flask import Flask
 from app.config import REQUIRED_SETTINGS, get_config
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging, register_request_logging
+from app.core.security import register_jwt_callbacks
 from app.extensions import db, jwt, limiter, migrate
+from app.jobs import register_commands
 from app.routes import register_blueprints
 
 
@@ -26,7 +28,9 @@ def create_app(config_name: str | None = None) -> Flask:
     from app import models  # noqa: F401
 
     register_error_handlers(app)
+    register_jwt_callbacks()
     register_blueprints(app)
+    register_commands(app)
     return app
 
 
