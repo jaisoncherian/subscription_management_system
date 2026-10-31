@@ -5,35 +5,40 @@ import { useAuth } from '../features/auth/AuthContext'
 import { applyServerError } from '../utils/formErrors'
 import Button from './Button'
 import ConfirmDialog from './ConfirmDialog'
+import Icon from './Icon'
 import { FormField, Input, Select } from './FormField'
 import ListPage from './ListPage'
 import Modal from './Modal'
 import StatusBadge from './StatusBadge'
 import { useToast } from './Toast'
 
+const SHORT_TYPES = ['money', 'number', 'date']
+
 function Field({ field, register, errors }) {
   const error = errors[field.name]?.message
   const id = `field-${field.name}`
   if (field.type === 'checkbox') {
     return (
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input type="checkbox" {...register(field.name)} /> {field.label}
+      <label className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-50">
+        <input type="checkbox" className="h-4 w-4 rounded accent-brand-600" {...register(field.name)} /> {field.label}
       </label>
     )
   }
   return (
-    <FormField label={field.label} htmlFor={id} error={error} hint={field.hint}>
-      {field.type === 'select' ? (
-        <Select id={id} invalid={error} defaultValue="" {...register(field.name)}>
-          <option value="" disabled>Select…</option>
-          {field.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </Select>
-      ) : (
-        <Input id={id} invalid={error} type={field.type === 'money' ? 'text' : field.type ?? 'text'}
-          inputMode={field.type === 'money' ? 'decimal' : undefined} autoComplete={field.type === 'password' ? 'new-password' : 'off'}
-          {...register(field.name)} />
-      )}
-    </FormField>
+    <div className={SHORT_TYPES.includes(field.type) ? '' : 'sm:col-span-2'}>
+      <FormField label={field.label} htmlFor={id} error={error} hint={field.hint}>
+        {field.type === 'select' ? (
+          <Select id={id} invalid={error} defaultValue="" {...register(field.name)}>
+            <option value="" disabled>Select…</option>
+            {field.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </Select>
+        ) : (
+          <Input id={id} invalid={error} type={field.type === 'money' ? 'text' : field.type ?? 'text'}
+            inputMode={field.type === 'money' ? 'decimal' : undefined} autoComplete={field.type === 'password' ? 'new-password' : 'off'}
+            {...register(field.name)} />
+        )}
+      </FormField>
+    </div>
   )
 }
 
@@ -70,8 +75,10 @@ function ResourceForm({ title, fields, defaults, renderExtra, transform, create,
         <Button variant="secondary" onClick={onDone}>Cancel</Button>
         <Button type="submit" form="resource-form" loading={isSubmitting}>Save</Button>
       </>}>
-      <form id="resource-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        {fields.map((f) => <Field key={f.name} field={f} register={register} errors={errors} />)}
+      <form id="resource-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-2" noValidate>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {fields.map((f) => <Field key={f.name} field={f} register={register} errors={errors} />)}
+        </div>
         {renderExtra?.(form)}
       </form>
     </Modal>
@@ -106,7 +113,7 @@ export default function ResourcePage({ title, subtitle, noun, queryKey, api, col
   const allColumns = [
     ...columns,
     ...(api.deactivate ? [
-      { key: 'is_active', header: 'Status', render: (r) => <StatusBadge status={r.is_active ? 'active' : 'closed'} /> },
+      { key: 'is_active', header: 'Status', render: (r) => <StatusBadge status={r.is_active ? 'active' : 'inactive'} /> },
     ] : []),
     ...(api.deactivate && isAdmin ? [{
       key: 'actions', header: '', className: 'text-right',
@@ -117,7 +124,7 @@ export default function ResourcePage({ title, subtitle, noun, queryKey, api, col
   return (
     <>
       <ListPage title={title} subtitle={subtitle} queryKey={queryKey} fetchPage={api.list} columns={allColumns}
-        actions={isAdmin && <Button onClick={() => setAdding(true)}>+ New {noun}</Button>} />
+        actions={isAdmin && <Button onClick={() => setAdding(true)}><Icon name="plus" /> New {noun}</Button>} />
       {adding && (
         <ResourceForm title={`New ${noun}`} fields={fields} defaults={defaults} renderExtra={renderExtra} transform={transform}
           create={create.mutateAsync} onDone={() => setAdding(false)} successMessage={`${noun[0].toUpperCase()}${noun.slice(1)} created`} />

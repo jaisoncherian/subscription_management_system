@@ -6,9 +6,9 @@ export default function ConfirmDialog({ open, title, message, confirmLabel = 'Co
     <Modal open={open} onClose={onCancel} title={title}
       footer={<>
         <Button variant="secondary" onClick={onCancel}>Back</Button>
-        <Button variant={danger ? 'danger' : 'primary'} loading={loading} onClick={onConfirm}>{confirmLabel}</Button>
+        <Button variant={danger ? 'danger-solid' : 'primary'} loading={loading} onClick={onConfirm}>{confirmLabel}</Button>
       </>}>
-      <p className="text-sm text-slate-600">{message}</p>
+      <p className="pb-2 text-sm leading-relaxed text-slate-600">{message}</p>
     </Modal>
   )
 }

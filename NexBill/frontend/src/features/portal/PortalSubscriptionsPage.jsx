@@ -8,7 +8,7 @@ export default function PortalSubscriptionsPage() {
   return (
     <ListPage title="My subscriptions" subtitle="Your plans and when they next bill" queryKey={['portal', 'subscriptions']}
       fetchPage={portalApi.subscriptions} getRowKey={(r) => r.subscription_id}
-      empty={<EmptyState title="No subscriptions yet" message="Your subscriptions appear here once our team sets them up." />}
+      empty={<EmptyState icon="repeat" title="No subscriptions yet" message="Your subscriptions appear here once our team sets them up." />}
       columns={[
         { key: 'number', header: 'Number', render: (r) => <span className="font-medium text-slate-900">{r.number}</span> },
         { key: 'plan_name', header: 'Plan' },

@@ -26,7 +26,7 @@ export default function ListPage({ title, subtitle, actions, queryKey, fetchPage
       <PageHeader title={title} subtitle={subtitle} actions={actions} />
       {children}
       {isError ? (
-        <div role="alert" className="rounded-lg bg-rose-50 p-4 text-sm text-rose-700">
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
           {error.message} <button className="ml-2 underline" onClick={() => refetch()}>Retry</button>
         </div>
       ) : (

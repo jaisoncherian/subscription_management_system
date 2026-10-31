@@ -3,89 +3,117 @@
 <head>
 <meta charset="utf-8">
 <title>Invoice {{ invoice.invoice_number }}</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
-  body { font-family: "Segoe UI", Arial, sans-serif; color: #17202e; margin: 40px auto; max-width: 760px; padding: 0 20px; }
-  h1 { margin: 0; font-size: 26px; }
-  .muted { color: #566274; }
-  .header, .parties { display: flex; justify-content: space-between; gap: 24px; }
-  .parties { margin: 28px 0; }
-  .parties p { margin: 2px 0; }
-  .status { font-weight: 600; text-transform: capitalize; }
-  .overdue { color: #b3261e; font-weight: 600; }
+  * { box-sizing: border-box; }
+  body { font-family: "Inter Variable", "Segoe UI", -apple-system, Arial, sans-serif; color: #0f172a; background: #f7f8fa; margin: 0; padding: 32px 16px; font-size: 14px; line-height: 1.5; }
+  .sheet { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; margin: 0 auto; max-width: 800px; padding: 44px 48px; }
+  p { margin: 0; }
+  .muted { color: #64748b; }
+  .label { color: #64748b; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+  .mark { background: #4f46e5; border-radius: 9px; color: #fff; display: flex; height: 30px; width: 30px; align-items: center; justify-content: center; }
+  .header, .parties { display: flex; justify-content: space-between; gap: 32px; }
+  .header { align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 28px; }
+  h1 { font-size: 24px; font-weight: 600; letter-spacing: -.02em; margin: 0 0 6px; text-align: right; }
+  .status { background: #f1f5f9; border-radius: 999px; color: #334155; display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 10px; text-transform: capitalize; }
+  .status.paid { background: #ecfdf5; color: #047857; }
+  .status.overdue { background: #fff1f2; color: #be123c; }
+  .right { text-align: right; }
+  .parties { margin: 28px 0 32px; }
+  .dates p + p { margin-top: 2px; }
   table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-  th, td { padding: 8px 6px; border-bottom: 1px solid #d8dde5; text-align: right; vertical-align: top; }
-  th { font-size: 13px; color: #566274; }
+  th, td { padding: 11px 8px; text-align: right; vertical-align: top; }
+  th { background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  tbody td { border-bottom: 1px solid #f1f5f9; }
   th:first-child, td:first-child { text-align: left; }
-  .totals { margin: 20px 0 0 auto; width: 300px; }
-  .totals td { border: 0; padding: 4px 6px; }
-  .totals .grand td { border-top: 2px solid #17202e; font-weight: 700; padding-top: 8px; }
-  .print { margin-top: 28px; }
-  @media print { .print { display: none; } body { margin: 0; } }
+  .small { font-size: 12px; }
+  table.totals { margin: 24px 0 0 auto; width: 300px; }
+  .totals td { border: 0; padding: 4px 8px; }
+  .totals .grand td { border-top: 1px solid #0f172a; font-size: 16px; font-weight: 600; padding-top: 10px; }
+  .totals .due td { font-weight: 600; }
+  .footer { border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; margin-top: 40px; padding-top: 16px; text-align: center; }
+  .print { background: #4f46e5; border: 0; border-radius: 8px; color: #fff; cursor: pointer; display: block; font: inherit; font-weight: 500; margin: 20px auto 0; padding: 9px 16px; }
+  .print:hover { background: #4338ca; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .sheet { border: 0; border-radius: 0; padding: 0; max-width: none; }
+    .print { display: none; }
+  }
 </style>
 </head>
 <body>
-  <div class="header">
-    <div>
-      <h1>Invoice {{ invoice.invoice_number }}</h1>
-      <p class="muted">Brightloop Software</p>
+  <div class="sheet">
+    <div class="header">
+      <div class="brand">
+        <span class="mark"><svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true"><path d="M9 23V9l14 14V9" fill="none" stroke="#fff" stroke-width="3.25" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        NexBill
+      </div>
+      <div class="right">
+        <h1>Invoice {{ invoice.invoice_number }}</h1>
+        {% if invoice.is_overdue %}<span class="status overdue">Overdue</span>
+        {% else %}<span class="status {{ invoice.status }}">{{ invoice.status }}</span>{% endif %}
+      </div>
     </div>
-    <div>
-      <p class="status">{{ invoice.status }}</p>
-      {% if invoice.is_overdue %}<p class="overdue">Overdue</p>{% endif %}
+
+    <div class="parties">
+      <div>
+        <p class="label">Bill to</p>
+        {% set customer = invoice.customer_snapshot %}
+        <p><strong>{{ customer.name }}</strong></p>
+        <p>{{ customer.email }}</p>
+        {% if customer.address_line1 %}<p>{{ customer.address_line1 }}</p>{% endif %}
+        {% if customer.address_line2 %}<p>{{ customer.address_line2 }}</p>{% endif %}
+        {% if customer.city or customer.state or customer.postal_code %}
+          <p>{{ [customer.city, customer.state, customer.postal_code] | select | join(", ") }}</p>
+        {% endif %}
+        {% if customer.country %}<p>{{ customer.country }}</p>{% endif %}
+        {% if customer.tax_identifier %}<p>Tax ID: {{ customer.tax_identifier }}</p>{% endif %}
+      </div>
+      <div class="dates right">
+        <p class="label">Details</p>
+        <p><span class="muted">Invoice date:</span> {{ invoice.invoice_date }}</p>
+        <p><span class="muted">Due date:</span> {{ invoice.due_date }}</p>
+        <p><span class="muted">Period:</span> {{ invoice.period_start }} to {{ invoice.period_end }}</p>
+      </div>
     </div>
+
+    <table>
+      <thead>
+        <tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Discount</th><th>Tax</th><th>Total</th></tr>
+      </thead>
+      <tbody>
+        {% for line in invoice.lines %}
+        <tr>
+          <td>{{ line.description }}</td>
+          <td>{{ line.quantity }}</td>
+          <td>{{ "%.2f" | format(line.unit_price) }}</td>
+          <td>{{ "%.2f" | format(line.discount_amount) }}</td>
+          <td>
+            {{ "%.2f" | format(line.tax_amount) }}
+            {% if line.tax_name %}<br><span class="muted small">{{ line.tax_name }}</span>{% endif %}
+          </td>
+          <td>{{ "%.2f" | format(line.line_total) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <table class="totals">
+      <tr><td class="muted">Subtotal</td><td>{{ "%.2f" | format(invoice.subtotal) }}</td></tr>
+      <tr><td class="muted">Discount</td><td>-{{ "%.2f" | format(invoice.discount_total) }}</td></tr>
+      <tr><td class="muted">Tax</td><td>{{ "%.2f" | format(invoice.tax_total) }}</td></tr>
+      <tr class="grand"><td>Total</td><td>{{ "%.2f" | format(invoice.total) }}</td></tr>
+      <tr><td class="muted">Paid</td><td>{{ "%.2f" | format(invoice.amount_paid) }}</td></tr>
+      <tr class="due"><td>Balance due</td><td>{{ "%.2f" | format(invoice.total - invoice.amount_paid) }}</td></tr>
+    </table>
+
+    <p class="footer">Thank you for your business.</p>
   </div>
 
-  <div class="parties">
-    <div>
-      <p class="muted">Bill to</p>
-      {% set customer = invoice.customer_snapshot %}
-      <p><strong>{{ customer.name }}</strong></p>
-      <p>{{ customer.email }}</p>
-      {% if customer.address_line1 %}<p>{{ customer.address_line1 }}</p>{% endif %}
-      {% if customer.address_line2 %}<p>{{ customer.address_line2 }}</p>{% endif %}
-      {% if customer.city or customer.state or customer.postal_code %}
-        <p>{{ [customer.city, customer.state, customer.postal_code] | select | join(", ") }}</p>
-      {% endif %}
-      {% if customer.country %}<p>{{ customer.country }}</p>{% endif %}
-      {% if customer.tax_identifier %}<p>Tax ID: {{ customer.tax_identifier }}</p>{% endif %}
-    </div>
-    <div>
-      <p><span class="muted">Invoice date:</span> {{ invoice.invoice_date }}</p>
-      <p><span class="muted">Due date:</span> {{ invoice.due_date }}</p>
-      <p><span class="muted">Period:</span> {{ invoice.period_start }} to {{ invoice.period_end }}</p>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Discount</th><th>Tax</th><th>Total</th></tr>
-    </thead>
-    <tbody>
-      {% for line in invoice.lines %}
-      <tr>
-        <td>{{ line.description }}</td>
-        <td>{{ line.quantity }}</td>
-        <td>{{ "%.2f" | format(line.unit_price) }}</td>
-        <td>{{ "%.2f" | format(line.discount_amount) }}</td>
-        <td>
-          {{ "%.2f" | format(line.tax_amount) }}
-          {% if line.tax_name %}<br><span class="muted">{{ line.tax_name }}</span>{% endif %}
-        </td>
-        <td>{{ "%.2f" | format(line.line_total) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <table class="totals">
-    <tr><td>Subtotal</td><td>{{ "%.2f" | format(invoice.subtotal) }}</td></tr>
-    <tr><td>Discount</td><td>-{{ "%.2f" | format(invoice.discount_total) }}</td></tr>
-    <tr><td>Tax</td><td>{{ "%.2f" | format(invoice.tax_total) }}</td></tr>
-    <tr class="grand"><td>Total</td><td>{{ "%.2f" | format(invoice.total) }}</td></tr>
-    <tr><td>Paid</td><td>{{ "%.2f" | format(invoice.amount_paid) }}</td></tr>
-    <tr><td>Balance due</td><td>{{ "%.2f" | format(invoice.total - invoice.amount_paid) }}</td></tr>
-  </table>
-
-  <button class="print" onclick="window.print()">Print or save as PDF</button>
+  <button type="button" class="print" id="print">Print or save as PDF</button>
+  <script nonce="{{ nonce }}">
+    document.getElementById("print").addEventListener("click", function () { window.print(); });
+  </script>
 </body>
 </html>

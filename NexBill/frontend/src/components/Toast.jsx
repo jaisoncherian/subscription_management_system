@@ -1,7 +1,12 @@
-import { createContext, useCallback, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import Icon from './Icon'
 
 const ToastContext = createContext(null)
-const COLORS = { success: 'bg-emerald-600', error: 'bg-rose-600', info: 'bg-slate-800' }
+const STYLES = {
+  success: { icon: 'checkCircle', color: 'text-emerald-500' },
+  error: { icon: 'alert', color: 'text-rose-500' },
+  info: { icon: 'alert', color: 'text-slate-500' },
+}
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
@@ -12,18 +17,21 @@ export function ToastProvider({ children }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000)
   }, [])
 
-  const api = {
+  const api = useMemo(() => ({
     success: (m) => push('success', m),
     error: (m) => push('error', m),
     info: (m) => push('info', m),
-  }
+  }), [push])
 
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div className="fixed right-4 top-4 z-[60] flex w-80 flex-col gap-2" aria-live="polite">
+      <div className="pointer-events-none fixed bottom-5 right-5 z-[60] flex w-80 flex-col gap-2" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`rounded-lg px-4 py-3 text-sm text-white shadow-lg ${COLORS[t.type]}`}>{t.message}</div>
+          <div key={t.id} className="pointer-events-auto flex animate-rise items-start gap-2.5 rounded-xl border border-slate-200/80 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-pop">
+            <Icon name={STYLES[t.type].icon} className={`mt-px h-[18px] w-[18px] ${STYLES[t.type].color}`} />
+            {t.message}
+          </div>
         ))}
       </div>
     </ToastContext.Provider>

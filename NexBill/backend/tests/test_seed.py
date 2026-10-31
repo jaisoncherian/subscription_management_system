@@ -55,7 +55,7 @@ def test_seeded_logins_work_and_see_only_their_data(app, seeded):
     invoices = customer.get("/api/portal/invoices").get_json()
     assert invoices["total"] > 0
     assert all(item["status"] != "draft" for item in invoices["items"])
-    assert ApiClient(app, "sales@brightloop.example").get("/api/customers").status_code == 200
+    assert ApiClient(app, "sales@nexbill.example").get("/api/customers").status_code == 200
 
 
 def test_refuses_production(app):

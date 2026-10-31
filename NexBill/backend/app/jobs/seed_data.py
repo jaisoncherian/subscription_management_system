@@ -21,7 +21,7 @@ from app.services import (
 from app.services.billing_periods import add_billing_period
 
 MARKER_PRODUCT = "Odoo Hosting"
-STAFF_EMAIL = "sales@brightloop.example"
+STAFF_EMAIL = "sales@nexbill.example"
 CUSTOMERS = [
     ("Ana Mathew", "ana@acme.example"),
     ("Rahul Nair", "rahul@northwind.example"),
